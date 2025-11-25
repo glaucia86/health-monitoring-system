@@ -1,0 +1,142 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  extensions = [vector]
+}
+
+enum Role {
+  ADMIN
+  VIEWER
+  DOCTOR
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      Role     @default(VIEWER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patients  Patient[]
+}
+
+model Patient {
+  id        String   @id @default(uuid())
+  name      String
+  birthDate DateTime
+  diagnosis String?
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  medications Medication[]
+  exams       Exam[]
+  appointments Appointment[]
+  documents   Document[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Medication {
+  id          String   @id @default(uuid())
+  name        String
+  dosage      String
+  frequency   String   // e.g., "daily", "weekly"
+  startDate   DateTime
+  endDate     DateTime?
+  notes       String?
+
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id])
+
+  schedules   MedicationSchedule[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model MedicationSchedule {
+  id           String   @id @default(uuid())
+  time         String
+  daysOfWeek   Int[]
+  active       Boolean  @default(true)
+
+  medicationId String
+  medication   Medication @relation(fields: [medicationId], references: [id])
+
+  intakes      MedicationIntake[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model MedicationIntake {
+  id           String   @id @default(uuid())
+  takenAt      DateTime @default(now())
+  status       String   // TAKEN, MISSED, SKIPPED
+  notes        String?
+  
+  scheduleId   String
+  schedule     MedicationSchedule @relation(fields: [scheduleId], references: [id])
+}
+
+model Exam {
+  id          String   @id @default(uuid())
+  title       String
+  date        DateTime
+  type        String   // e.g., "Blood Test", "MRI"
+  resultSummary String? // JSON or text summary
+  fileUrl     String?
+  
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Appointment {
+  id          String   @id @default(uuid())
+  date        DateTime
+  doctorName  String
+  specialty   String?
+  location    String?
+  notes       String?
+
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Document {
+  id          String   @id @default(uuid())
+  filename    String
+  url         String
+  type        String
+  tags        String[]
+  content     String?
+  metadata    Json?
+  embedding   Unsupported("vector(1536)")? // For OpenAI embeddings
+
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
