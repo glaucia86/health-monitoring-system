@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { m } from '@/lib/motion-provider';
 import { Mail, Lock, Eye, EyeOff, LogIn } from 'lucide-react';
 import Link from 'next/link';
@@ -16,12 +19,35 @@ import { Label } from '@/components/ui/label';
 import { staggerContainer, staggerItem } from '@/lib/motion';
 import { toast } from 'sonner';
 
+// Zod validation schema
+const loginSchema = z.object({
+  email: z
+    .string()
+    .min(1, 'Email é obrigatório')
+    .email('Email inválido'),
+  password: z
+    .string()
+    .min(1, 'Senha é obrigatória'),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
+
 export default function LoginPage() {
   const router = useRouter();
   const { setAuth } = useAuthStore();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
 
   const loginMutation = useMutation({
     mutationFn: authService.login,
@@ -39,9 +65,8 @@ export default function LoginPage() {
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    loginMutation.mutate({ email, password });
+  const onSubmit = (data: LoginFormData) => {
+    loginMutation.mutate(data);
   };
 
   return (
@@ -62,7 +87,7 @@ export default function LoginPage() {
         }
       >
         <m.form
-          onSubmit={handleSubmit}
+          onSubmit={handleSubmit(onSubmit)}
           variants={staggerContainer}
           initial="hidden"
           animate="visible"
@@ -79,13 +104,18 @@ export default function LoginPage() {
                 id="email"
                 type="email"
                 placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                {...register('email')}
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? 'email-error' : undefined}
                 className="pl-10"
                 autoComplete="email"
               />
             </div>
+            {errors.email && (
+              <p id="email-error" className="text-sm text-destructive" role="alert">
+                {errors.email.message}
+              </p>
+            )}
           </m.div>
 
           {/* Password Field */}
@@ -107,9 +137,9 @@ export default function LoginPage() {
                 id="password"
                 type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+                {...register('password')}
+                aria-invalid={!!errors.password}
+                aria-describedby={errors.password ? 'password-error' : undefined}
                 className="pl-10 pr-10"
                 autoComplete="current-password"
               />
@@ -128,6 +158,11 @@ export default function LoginPage() {
                 </span>
               </button>
             </div>
+            {errors.password && (
+              <p id="password-error" className="text-sm text-destructive" role="alert">
+                {errors.password.message}
+              </p>
+            )}
           </m.div>
 
           {/* Submit Button */}

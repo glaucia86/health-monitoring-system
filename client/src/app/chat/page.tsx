@@ -10,7 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ChatMessage } from '@/types';
 import { toast } from 'sonner';
-import { MessageSquare, Upload, FileText, Lightbulb, Info } from 'lucide-react';
+import { MessageSquare, Upload, FileText, Lightbulb, Info, Copy, Check } from 'lucide-react';
+import { truncateId } from '@/lib/utils';
 
 // Layout & Motion
 import { MainLayout } from '@/components/layout/main-layout';
@@ -33,8 +34,22 @@ export default function ChatPage() {
   const [input, setInput] = useState('');
   const [conversationId, setConversationId] = useState<string | undefined>();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [copiedId, setCopiedId] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle copy conversation ID to clipboard
+  const handleCopyId = async () => {
+    if (!conversationId) return;
+    try {
+      await navigator.clipboard.writeText(conversationId);
+      setCopiedId(true);
+      toast.success('ID copiado!');
+      setTimeout(() => setCopiedId(false), 2000);
+    } catch {
+      toast.error('Erro ao copiar ID');
+    }
+  };
 
   // Fetch documents
   const { data: documents = [], isLoading: isLoadingDocuments } = useQuery({
@@ -364,9 +379,27 @@ export default function ChatPage() {
                       <p className="text-xs text-muted-foreground mb-1">
                         ID da Conversa:
                       </p>
-                      <p className="text-xs font-mono text-foreground break-all bg-muted/50 p-2 rounded">
-                        {conversationId}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p 
+                          className="text-xs font-mono text-foreground break-all bg-muted/50 p-2 rounded flex-1"
+                          title={conversationId}
+                        >
+                          {truncateId(conversationId)}
+                        </p>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0"
+                          onClick={handleCopyId}
+                          title="Copiar ID completo"
+                        >
+                          {copiedId ? (
+                            <Check className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 </m.div>

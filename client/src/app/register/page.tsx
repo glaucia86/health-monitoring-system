@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { m } from '@/lib/motion-provider';
 import { 
   Mail, 
@@ -28,21 +31,63 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { staggerContainer, staggerItem } from '@/lib/motion';
 import { toast } from 'sonner';
+import { formatCPF, unformatCPF } from '@/lib/formatCpf';
+
+// Zod validation schema
+const registerSchema = z.object({
+  name: z
+    .string()
+    .min(1, 'Nome é obrigatório')
+    .min(2, 'Nome deve ter no mínimo 2 caracteres'),
+  email: z
+    .string()
+    .min(1, 'Email é obrigatório')
+    .email('Email inválido'),
+  cpf: z
+    .string()
+    .min(1, 'CPF é obrigatório')
+    .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, 'CPF inválido (formato: 000.000.000-00)'),
+  birthdate: z
+    .string()
+    .min(1, 'Data de nascimento é obrigatória'),
+  phone: z
+    .string()
+    .min(1, 'Telefone é obrigatório')
+    .min(10, 'Telefone deve ter pelo menos 10 dígitos'),
+  password: z
+    .string()
+    .min(1, 'Senha é obrigatória')
+    .min(6, 'Senha deve ter no mínimo 6 caracteres'),
+  address: z.string().optional(),
+  emergencyContact: z.string().optional(),
+  emergencyPhone: z.string().optional(),
+});
+
+type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
   const router = useRouter();
   const { setAuth } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    name: '',
-    cpf: '',
-    birthdate: '',
-    phone: '',
-    address: '',
-    emergencyContact: '',
-    emergencyPhone: '',
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      cpf: '',
+      birthdate: '',
+      phone: '',
+      password: '',
+      address: '',
+      emergencyContact: '',
+      emergencyPhone: '',
+    },
   });
 
   const registerMutation = useMutation({
@@ -61,13 +106,13 @@ export default function RegisterPage() {
     },
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    registerMutation.mutate(formData);
+  const onSubmit = (data: RegisterFormData) => {
+    // Strip CPF mask before sending to API
+    const payload = {
+      ...data,
+      cpf: unformatCPF(data.cpf),
+    };
+    registerMutation.mutate(payload);
   };
 
   return (
@@ -88,7 +133,7 @@ export default function RegisterPage() {
         }
       >
         <m.form
-          onSubmit={handleSubmit}
+          onSubmit={handleSubmit(onSubmit)}
           variants={staggerContainer}
           initial="hidden"
           animate="visible"
@@ -109,14 +154,18 @@ export default function RegisterPage() {
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="name"
-                    name="name"
                     placeholder="João Silva"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
+                    {...register('name')}
+                    aria-invalid={!!errors.name}
+                    aria-describedby={errors.name ? 'name-error' : undefined}
                     className="pl-10"
                   />
                 </div>
+                {errors.name && (
+                  <p id="name-error" className="text-sm text-destructive" role="alert">
+                    {errors.name.message}
+                  </p>
+                )}
               </div>
 
               {/* Email */}
@@ -128,16 +177,20 @@ export default function RegisterPage() {
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="email"
-                    name="email"
                     type="email"
                     placeholder="seu@email.com"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
+                    {...register('email')}
+                    aria-invalid={!!errors.email}
+                    aria-describedby={errors.email ? 'email-error' : undefined}
                     className="pl-10"
                     autoComplete="email"
                   />
                 </div>
+                {errors.email && (
+                  <p id="email-error" className="text-sm text-destructive" role="alert">
+                    {errors.email.message}
+                  </p>
+                )}
               </div>
 
               {/* CPF */}
@@ -147,16 +200,32 @@ export default function RegisterPage() {
                 </Label>
                 <div className="relative">
                   <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="cpf"
+                  <Controller
                     name="cpf"
-                    placeholder="000.000.000-00"
-                    value={formData.cpf}
-                    onChange={handleChange}
-                    required
-                    className="pl-10"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        id="cpf"
+                        placeholder="000.000.000-00"
+                        value={field.value}
+                        onChange={(e) => {
+                          const formatted = formatCPF(e.target.value);
+                          field.onChange(formatted);
+                        }}
+                        onBlur={field.onBlur}
+                        aria-invalid={!!errors.cpf}
+                        aria-describedby={errors.cpf ? 'cpf-error' : undefined}
+                        className="pl-10"
+                        maxLength={14}
+                      />
+                    )}
                   />
                 </div>
+                {errors.cpf && (
+                  <p id="cpf-error" className="text-sm text-destructive" role="alert">
+                    {errors.cpf.message}
+                  </p>
+                )}
               </div>
 
               {/* Birthdate */}
@@ -168,14 +237,18 @@ export default function RegisterPage() {
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="birthdate"
-                    name="birthdate"
                     type="date"
-                    value={formData.birthdate}
-                    onChange={handleChange}
-                    required
+                    {...register('birthdate')}
+                    aria-invalid={!!errors.birthdate}
+                    aria-describedby={errors.birthdate ? 'birthdate-error' : undefined}
                     className="pl-10"
                   />
                 </div>
+                {errors.birthdate && (
+                  <p id="birthdate-error" className="text-sm text-destructive" role="alert">
+                    {errors.birthdate.message}
+                  </p>
+                )}
               </div>
 
               {/* Phone */}
@@ -187,14 +260,18 @@ export default function RegisterPage() {
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="phone"
-                    name="phone"
                     placeholder="(00) 00000-0000"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    required
+                    {...register('phone')}
+                    aria-invalid={!!errors.phone}
+                    aria-describedby={errors.phone ? 'phone-error' : undefined}
                     className="pl-10"
                   />
                 </div>
+                {errors.phone && (
+                  <p id="phone-error" className="text-sm text-destructive" role="alert">
+                    {errors.phone.message}
+                  </p>
+                )}
               </div>
 
               {/* Password */}
@@ -206,12 +283,11 @@ export default function RegisterPage() {
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="password"
-                    name="password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
+                    {...register('password')}
+                    aria-invalid={!!errors.password}
+                    aria-describedby={errors.password ? 'password-error' : undefined}
                     className="pl-10 pr-10"
                     autoComplete="new-password"
                   />
@@ -227,6 +303,11 @@ export default function RegisterPage() {
                     )}
                   </button>
                 </div>
+                {errors.password && (
+                  <p id="password-error" className="text-sm text-destructive" role="alert">
+                    {errors.password.message}
+                  </p>
+                )}
               </div>
             </div>
           </m.div>
@@ -250,10 +331,8 @@ export default function RegisterPage() {
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="address"
-                    name="address"
                     placeholder="Rua, número, bairro, cidade"
-                    value={formData.address}
-                    onChange={handleChange}
+                    {...register('address')}
                     className="pl-10"
                   />
                 </div>
@@ -268,10 +347,8 @@ export default function RegisterPage() {
                   <AlertCircle className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="emergencyContact"
-                    name="emergencyContact"
                     placeholder="Nome do contato"
-                    value={formData.emergencyContact}
-                    onChange={handleChange}
+                    {...register('emergencyContact')}
                     className="pl-10"
                   />
                 </div>
@@ -286,10 +363,8 @@ export default function RegisterPage() {
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="emergencyPhone"
-                    name="emergencyPhone"
                     placeholder="(00) 00000-0000"
-                    value={formData.emergencyPhone}
-                    onChange={handleChange}
+                    {...register('emergencyPhone')}
                     className="pl-10"
                   />
                 </div>
