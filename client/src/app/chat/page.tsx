@@ -2,23 +2,33 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+import { m, AnimatePresence } from '@/lib/motion-provider';
 import { useAuthStore } from '@/stores/auth.store';
 import { chatService, DocumentListItem } from '@/services/chat.service';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import Link from 'next/link';
 import { ChatMessage } from '@/types';
 import { toast } from 'sonner';
-import ReactMarkdown from 'react-markdown';
+import { MessageSquare, Upload, FileText, Lightbulb, Info } from 'lucide-react';
+
+// Layout & Motion
+import { MainLayout } from '@/components/layout/main-layout';
+import { PageHeader } from '@/components/shared/page-header';
+import { fadeIn, scaleIn, staggerContainer, listItem } from '@/lib/motion';
+
+// Chat components
+import { 
+  MessageBubble, 
+  TypingIndicator, 
+  ChatInput, 
+  DocumentList,
+  Document 
+} from '@/components/chat';
 
 export default function ChatPage() {
-  const router = useRouter();
   const queryClient = useQueryClient();
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [conversationId, setConversationId] = useState<string | undefined>();
@@ -32,6 +42,16 @@ export default function ChatPage() {
     queryFn: chatService.getDocuments,
   });
 
+  // Transform documents to match DocumentList component interface
+  const transformedDocuments: Document[] = documents.map((doc: DocumentListItem) => ({
+    id: doc.id,
+    name: doc.filename,
+    type: doc.type || 'application/octet-stream',
+    size: doc.size || 0,
+    uploadedAt: new Date(doc.createdAt),
+    status: 'ready' as const,
+  }));
+
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     if (scrollRef.current) {
@@ -42,7 +62,7 @@ export default function ChatPage() {
   // Upload document mutation
   const uploadMutation = useMutation({
     mutationFn: chatService.uploadDocument,
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast.success('Documento enviado com sucesso!', {
         description: `O arquivo foi processado e está pronto para análise.`,
       });
@@ -53,7 +73,7 @@ export default function ChatPage() {
       // Refetch documents list
       queryClient.invalidateQueries({ queryKey: ['documents'] });
     },
-    onError: (error: any) => {
+    onError: (error: Error & { response?: { data?: { message?: string } } }) => {
       toast.error('Erro ao enviar documento', {
         description: error.response?.data?.message || error.message,
       });
@@ -63,21 +83,28 @@ export default function ChatPage() {
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: chatService.sendMessage,
-    onSuccess: (data) => {
-      // Add user message
+    onSuccess: (data, variables) => {
+      // Add user message using variables to avoid stale closure
       const userMessage: ChatMessage = {
-        id: Date.now().toString(),
+        id: `user_${Date.now()}`,
         role: 'user',
-        content: input,
+        content: variables.message,
         createdAt: new Date(),
       };
 
       // Add assistant message from response
-      setMessages((prev) => [...prev, userMessage, data.message]);
+      const assistantMessage: ChatMessage = {
+        id: data.message.id,
+        role: 'assistant',
+        content: data.message.content,
+        createdAt: new Date(data.message.createdAt),
+      };
+      
+      setMessages((prev) => [...prev, userMessage, assistantMessage]);
       setConversationId(data.conversationId);
       setInput('');
     },
-    onError: (error: any) => {
+    onError: (error: Error & { response?: { data?: { message?: string } } }) => {
       toast.error('Erro ao enviar mensagem', {
         description: error.response?.data?.message || error.message,
       });
@@ -93,11 +120,8 @@ export default function ChatPage() {
     });
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
+  const handleAttachClick = () => {
+    fileInputRef.current?.click();
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,155 +144,131 @@ export default function ChatPage() {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    router.push('/login');
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Chat com IA</h1>
-              <p className="text-sm text-gray-600">Assistente de Saúde Inteligente</p>
-            </div>
-            <div className="flex gap-4">
-              <Link href="/dashboard">
-                <Button variant="outline">Dashboard</Button>
-              </Link>
-              <Button variant="destructive" onClick={handleLogout}>
-                Sair
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+    <MainLayout>
+      <m.div
+        variants={fadeIn}
+        initial="hidden"
+        animate="visible"
+        className="space-y-6"
+      >
+        {/* Page Header */}
+        <PageHeader
+          title="Chat com IA"
+          description="Assistente de Saúde Inteligente"
+          icon={MessageSquare}
+          breadcrumbs={[
+            { label: 'Dashboard', href: '/dashboard' },
+            { label: 'Chat com IA' },
+          ]}
+        />
 
-      {/* Main Content */}
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Chat Area */}
-          <div className="lg:col-span-2">
-            <Card className="h-[calc(100vh-250px)] flex flex-col overflow-hidden">
-              <CardHeader className="flex-shrink-0">
-                <CardTitle>Conversa</CardTitle>
+          <m.div 
+            className="lg:col-span-2"
+            variants={scaleIn}
+          >
+            <Card className="h-[calc(100vh-280px)] flex flex-col overflow-hidden border-border/50 shadow-sm">
+              <CardHeader className="flex-shrink-0 border-b bg-muted/30">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <MessageSquare className="h-5 w-5 text-primary" />
+                  Conversa
+                </CardTitle>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col p-0 min-h-0 overflow-hidden">
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-4" ref={scrollRef}>
                   {messages.length === 0 ? (
-                    <div className="flex items-center justify-center h-full text-gray-500">
-                      <div className="text-center">
-                        <p className="text-lg font-medium mb-2">
-                          👋 Olá, {user?.name}!
+                    <m.div 
+                      className="flex items-center justify-center h-full"
+                      variants={fadeIn}
+                      initial="hidden"
+                      animate="visible"
+                    >
+                      <div className="text-center max-w-md">
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                          <MessageSquare className="h-8 w-8 text-primary" />
+                        </div>
+                        <p className="text-lg font-medium text-foreground mb-2">
+                          Olá, {user?.name}! 👋
                         </p>
-                        <p className="text-sm">
-                          Faça uma pergunta sobre sua saúde ou envie documentos médicos.
+                        <p className="text-sm text-muted-foreground">
+                          Faça uma pergunta sobre saúde ou envie documentos médicos para análise.
                         </p>
                       </div>
-                    </div>
+                    </m.div>
                   ) : (
                     <div className="space-y-4">
-                      {messages.map((message) => (
-                        <div
-                          key={message.id}
-                          className={`flex gap-3 ${
-                            message.role === 'user' ? 'justify-end' : 'justify-start'
-                          }`}
+                      {messages.map((message, index) => (
+                        <m.div 
+                          key={message.id} 
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05, duration: 0.3 }}
                         >
-                          {message.role === 'assistant' && (
-                            <Avatar className="h-8 w-8">
-                              <AvatarFallback className="bg-blue-500 text-white">
-                                IA
-                              </AvatarFallback>
-                            </Avatar>
-                          )}
-                          <div
-                            className={`max-w-[70%] rounded-lg px-4 py-2 ${
-                              message.role === 'user'
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-gray-100 text-gray-900'
-                            }`}
-                          >
-                            {message.role === 'assistant' ? (
-                              <div className="text-sm prose prose-sm max-w-none prose-headings:text-gray-900 prose-headings:font-semibold prose-headings:mt-3 prose-headings:mb-2 prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-strong:text-gray-900">
-                                <ReactMarkdown>{message.content}</ReactMarkdown>
-                              </div>
-                            ) : (
-                              <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                            )}
-                            <p
-                              className={`text-xs mt-1 ${
-                                message.role === 'user' ? 'text-blue-200' : 'text-gray-500'
-                              }`}
-                            >
-                              {new Date(message.createdAt).toLocaleTimeString('pt-BR', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </p>
-                          </div>
-                          {message.role === 'user' && (
-                            <Avatar className="h-8 w-8">
-                              <AvatarFallback className="bg-gray-500 text-white">
-                                {user?.name?.charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                          )}
-                        </div>
+                          <MessageBubble
+                            role={message.role}
+                            content={message.content}
+                            timestamp={message.createdAt}
+                            avatar={{
+                              fallback: message.role === 'assistant' 
+                                ? 'IA' 
+                                : user?.name?.charAt(0).toUpperCase() || 'U',
+                            }}
+                          />
+                        </m.div>
                       ))}
-                      {sendMessageMutation.isPending && (
-                        <div className="flex gap-3 justify-start">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="bg-blue-500 text-white">
-                              IA
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="bg-gray-100 text-gray-900 rounded-lg px-4 py-2">
-                            <p className="text-sm">Pensando...</p>
-                          </div>
-                        </div>
-                      )}
+                      
+                      {/* Typing Indicator */}
+                      <TypingIndicator visible={sendMessageMutation.isPending} />
                     </div>
                   )}
                 </div>
 
-                {/* Input Area */}
-                <div className="border-t p-4">
-                  <div className="flex gap-2">
-                    <Textarea
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={handleKeyPress}
-                      placeholder="Digite sua mensagem... (Shift+Enter para nova linha)"
-                      className="min-h-[60px] resize-none"
-                      disabled={sendMessageMutation.isPending}
-                    />
-                    <Button
-                      onClick={handleSendMessage}
-                      disabled={!input.trim() || sendMessageMutation.isPending}
-                      className="self-end"
-                    >
-                      {sendMessageMutation.isPending ? 'Enviando...' : 'Enviar'}
-                    </Button>
-                  </div>
+                {/* Chat Input */}
+                <div className="border-t bg-background p-4">
+                  <ChatInput
+                    value={input}
+                    onChange={setInput}
+                    onSubmit={handleSendMessage}
+                    onAttach={handleAttachClick}
+                    placeholder="Digite sua mensagem... (Shift+Enter para nova linha)"
+                    disabled={sendMessageMutation.isPending}
+                    loading={sendMessageMutation.isPending}
+                  />
+                  {/* Hidden file input for attachment */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    onChange={handleFileSelect}
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                    className="hidden"
+                  />
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </m.div>
 
           {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle>Upload de Documentos</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm text-gray-600 mb-3">
+          <m.div 
+            className="lg:col-span-1 space-y-4"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            {/* Upload Section */}
+            <m.div variants={listItem}>
+              <Card className="border-border/50 shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Upload className="h-4 w-4 text-primary" />
+                    Upload de Documentos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
                     Envie documentos médicos (PDF, imagens) para análise pela IA.
                   </p>
                   <Input
@@ -277,98 +277,104 @@ export default function ChatPage() {
                     onChange={handleFileSelect}
                     accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                     disabled={uploadMutation.isPending}
+                    className="cursor-pointer"
                   />
-                </div>
 
-                {selectedFile && (
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-sm font-medium text-gray-900 mb-1">
-                      Arquivo selecionado:
-                    </p>
-                    <p className="text-sm text-gray-600 truncate">
-                      {selectedFile.name}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                  </div>
-                )}
-
-                <Button
-                  onClick={handleUploadDocument}
-                  disabled={!selectedFile || uploadMutation.isPending}
-                  className="w-full"
-                >
-                  {uploadMutation.isPending ? 'Enviando...' : 'Enviar Documento'}
-                </Button>
-
-                <div className="pt-4 border-t">
-                  <p className="text-xs text-gray-500">
-                    💡 <strong>Dica:</strong> A IA pode analisar seus documentos médicos
-                    e responder perguntas específicas sobre eles.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Documents List */}
-            <Card className="mt-4">
-              <CardHeader>
-                <CardTitle className="text-sm">📄 Documentos Enviados</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoadingDocuments ? (
-                  <p className="text-sm text-gray-500">Carregando documentos...</p>
-                ) : documents.length === 0 ? (
-                  <p className="text-sm text-gray-500">
-                    Nenhum documento enviado ainda.
-                  </p>
-                ) : (
-                  <ul className="space-y-2 max-h-60 overflow-y-auto">
-                    {documents.map((doc) => (
-                      <li
-                        key={doc.id}
-                        className="p-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  <AnimatePresence>
+                    {selectedFile && (
+                      <m.div 
+                        className="p-3 bg-muted/50 rounded-lg border"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
                       >
-                        <div className="flex items-start gap-2">
-                          <span className="text-lg">
-                            {doc.type?.includes('pdf') ? '📕' : 
-                             doc.type?.includes('image') ? '🖼️' : '📄'}
-                          </span>
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-primary" />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">
-                              {doc.filename}
+                            <p className="text-sm font-medium truncate">
+                              {selectedFile.name}
                             </p>
-                            <p className="text-xs text-gray-500">
-                              {new Date(doc.createdAt).toLocaleDateString('pt-BR')}
+                            <p className="text-xs text-muted-foreground">
+                              {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                             </p>
                           </div>
                         </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </CardContent>
-            </Card>
+                      </m.div>
+                    )}
+                  </AnimatePresence>
 
-            {conversationId && (
-              <Card className="mt-4">
-                <CardHeader>
-                  <CardTitle className="text-sm">Informações</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-xs text-gray-600">
-                    ID da Conversa:
-                  </p>
-                  <p className="text-xs font-mono text-gray-900 mt-1 break-all">
-                    {conversationId}
-                  </p>
+                  <Button
+                    onClick={handleUploadDocument}
+                    disabled={!selectedFile || uploadMutation.isPending}
+                    className="w-full"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {uploadMutation.isPending ? 'Enviando...' : 'Enviar Documento'}
+                  </Button>
+
+                  <div className="pt-3 border-t">
+                    <p className="text-xs text-muted-foreground flex items-start gap-2">
+                      <Lightbulb className="h-3 w-3 mt-0.5 text-warning shrink-0" />
+                      <span>
+                        <strong>Dica:</strong> A IA pode analisar seus documentos médicos
+                        e responder perguntas específicas sobre eles.
+                      </span>
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
-            )}
-          </div>
+            </m.div>
+
+            {/* Documents List */}
+            <m.div variants={listItem}>
+              <Card className="border-border/50 shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <FileText className="h-4 w-4 text-primary" />
+                    Documentos Enviados
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <DocumentList
+                    documents={transformedDocuments}
+                    loading={isLoadingDocuments}
+                    className="max-h-60"
+                  />
+                </CardContent>
+              </Card>
+            </m.div>
+
+            {/* Conversation Info */}
+            <AnimatePresence>
+              {conversationId && (
+                <m.div
+                  variants={listItem}
+                  initial="hidden"
+                  animate="visible"
+                  exit="hidden"
+                >
+                  <Card className="border-border/50 shadow-sm">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <Info className="h-4 w-4 text-primary" />
+                        Informações
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-xs text-muted-foreground mb-1">
+                        ID da Conversa:
+                      </p>
+                      <p className="text-xs font-mono text-foreground break-all bg-muted/50 p-2 rounded">
+                        {conversationId}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </m.div>
+              )}
+            </AnimatePresence>
+          </m.div>
         </div>
-      </main>
-    </div>
+      </m.div>
+    </MainLayout>
   );
 }

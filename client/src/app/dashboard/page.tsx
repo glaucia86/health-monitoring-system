@@ -1,16 +1,32 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+import { m } from '@/lib/motion-provider';
+import { 
+  Calendar, 
+  Pill, 
+  AlertCircle, 
+  FileText
+} from 'lucide-react';
+
 import { useAuthStore } from '@/stores/auth.store';
 import { dashboardService } from '@/services/dashboard.service';
-import { Button } from '@/components/ui/button';
+import { MainLayout } from '@/components/layout';
+import { PageHeader, EmptyState, LoadingSkeleton } from '@/components/shared';
+import { 
+  StatCard, 
+  AlertBanner, 
+  AlertList,
+  AppointmentItem, 
+  MedicationItem 
+} from '@/components/dashboard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import Link from 'next/link';
+import { staggerContainer, staggerItem } from '@/lib/motion';
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
+  const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
 
   const { data: dashboardData, isLoading } = useQuery({
     queryKey: ['dashboard'],
@@ -18,268 +34,282 @@ export default function DashboardPage() {
     enabled: !!user,
   });
 
-  const handleLogout = () => {
-    logout();
-    router.push('/login');
+  const handleDismissAlert = (alertId: string) => {
+    setDismissedAlerts((prev) => [...prev, alertId]);
   };
+
+  // Filter out dismissed alerts
+  const activeAlerts = dashboardData?.alerts?.filter(
+    (alert) => !dismissedAlerts.includes(alert.id)
+  ) || [];
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Carregando...</p>
-      </div>
+      <MainLayout>
+        <div className="space-y-8">
+          {/* Stats Grid Loading */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <LoadingSkeleton key={i} variant="stat-card" />
+            ))}
+          </div>
+          
+          {/* Content Loading */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <LoadingSkeleton variant="card" />
+            <LoadingSkeleton variant="card" />
+          </div>
+        </div>
+      </MainLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Sistema de Monitoramento de Saúde</h1>
-              <p className="text-sm text-gray-600">Bem-vindo, {user?.name}!</p>
-            </div>
-            <div className="flex gap-4">
-              <Link href="/chat">
-                <Button variant="outline">Chat com IA</Button>
-              </Link>
-              <Button variant="destructive" onClick={handleLogout}>
-                Sair
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+    <MainLayout>
+      <m.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+        className="space-y-8"
+      >
+        {/* Page Header */}
+        <m.div variants={staggerItem}>
+          <PageHeader
+            title={`Olá, ${user?.name?.split(' ')[0] || 'Cuidador'}!`}
+            description="Aqui está o resumo do dia para acompanhamento do paciente."
+          />
+        </m.div>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium text-gray-600">
-                Compromissos Próximos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                {dashboardData?.upcomingAppointments?.length || 0}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium text-gray-600">
-                Medicações Hoje
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                {dashboardData?.todayMedications?.length || 0}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium text-gray-600">
-                Alertas Ativos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                {dashboardData?.alerts?.length || 0}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <m.div 
+          variants={staggerItem}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+        >
+          <StatCard
+            icon={Calendar}
+            label="Compromissos Próximos"
+            value={dashboardData?.upcomingAppointments?.length || 0}
+            variant="primary"
+            trend={
+              dashboardData?.upcomingAppointments?.length 
+                ? { direction: 'neutral' as const, value: 'Esta semana' }
+                : undefined
+            }
+          />
+          <StatCard
+            icon={Pill}
+            label="Medicações Hoje"
+            value={dashboardData?.todayMedications?.length || 0}
+            variant="success"
+            trend={
+              dashboardData?.todayMedications?.length
+                ? { direction: 'neutral' as const, value: 'Agendar lembretes' }
+                : undefined
+            }
+          />
+          <StatCard
+            icon={AlertCircle}
+            label="Alertas Ativos"
+            value={activeAlerts.length}
+            variant={activeAlerts.length > 0 ? 'warning' : 'default'}
+            trend={
+              activeAlerts.length > 0
+                ? { direction: 'up' as const, value: 'Requer atenção' }
+                : { direction: 'down' as const, value: 'Tudo em ordem' }
+            }
+          />
+          <StatCard
+            icon={FileText}
+            label="Exames Recentes"
+            value={dashboardData?.recentExams?.length || 0}
+            variant="default"
+            trend={
+              dashboardData?.recentExams?.length
+                ? { direction: 'neutral' as const, value: 'Últimos 30 dias' }
+                : undefined
+            }
+          />
+        </m.div>
 
         {/* Alerts Section */}
-        {dashboardData?.alerts && dashboardData.alerts.length > 0 && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Alertas</CardTitle>
-              <CardDescription>Atenção necessária</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {dashboardData.alerts.map((alert) => (
-                  <div
-                    key={alert.id}
-                    className={`p-4 rounded-lg border ${
-                      alert.severity === 'error'
-                        ? 'bg-red-50 border-red-200'
-                        : alert.severity === 'warning'
-                        ? 'bg-yellow-50 border-yellow-200'
-                        : 'bg-blue-50 border-blue-200'
-                    }`}
-                  >
-                    <div className="flex items-start">
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">
-                          {alert.message}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {new Date(alert.createdAt).toLocaleString('pt-BR')}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        {activeAlerts.length > 0 && (
+          <m.div variants={staggerItem}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-warning" />
+                  Alertas
+                </CardTitle>
+                <CardDescription>Itens que requerem sua atenção</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AlertList>
+                  {activeAlerts.map((alert) => (
+                    <AlertBanner
+                      key={alert.id}
+                      severity={alert.severity as 'info' | 'warning' | 'error' | 'success'}
+                      title={alert.message}
+                      description={new Date(alert.createdAt).toLocaleString('pt-BR')}
+                      dismissible
+                      onDismiss={() => handleDismissAlert(alert.id)}
+                    />
+                  ))}
+                </AlertList>
+              </CardContent>
+            </Card>
+          </m.div>
         )}
 
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Appointments */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Próximos Compromissos</CardTitle>
-              <CardDescription>Seus agendamentos médicos</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {dashboardData?.upcomingAppointments?.length === 0 ? (
-                <p className="text-sm text-gray-500">Nenhum compromisso agendado</p>
-              ) : (
-                <div className="space-y-4">
-                  {dashboardData?.upcomingAppointments?.map((appointment) => (
-                    <div
-                      key={appointment.id}
-                      className="border-l-4 border-blue-500 pl-4 py-2"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-medium text-gray-900">
-                            {appointment.doctorName}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            {appointment.specialty}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {appointment.location}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium text-gray-900">
-                            {new Date(appointment.date).toLocaleDateString('pt-BR')}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {new Date(appointment.date).toLocaleTimeString('pt-BR', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                      {appointment.notes && (
-                        <p className="text-sm text-gray-600 mt-2">
-                          {appointment.notes}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <m.div variants={staggerItem}>
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-primary" />
+                  Próximos Compromissos
+                </CardTitle>
+                <CardDescription>Agendamentos médicos do paciente</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!dashboardData?.upcomingAppointments?.length ? (
+                  <EmptyState
+                    icon={Calendar}
+                    title="Nenhum compromisso agendado"
+                    description="Os próximos compromissos aparecerão aqui."
+                    action={{
+                      label: 'Agendar consulta',
+                      onClick: () => {/* TODO: Navigate to appointments */},
+                    }}
+                  />
+                ) : (
+                  <m.div 
+                    variants={staggerContainer}
+                    initial="hidden"
+                    animate="visible"
+                    className="space-y-3"
+                  >
+                    {dashboardData.upcomingAppointments.map((appointment) => (
+                      <m.div key={appointment.id} variants={staggerItem}>
+                        <AppointmentItem
+                          doctor={{
+                            name: appointment.doctorName,
+                            specialty: appointment.specialty,
+                          }}
+                          datetime={new Date(appointment.date)}
+                          location={appointment.location}
+                          status={appointment.status || 'scheduled'}
+                        />
+                      </m.div>
+                    ))}
+                  </m.div>
+                )}
+              </CardContent>
+            </Card>
+          </m.div>
 
           {/* Medications */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Medicações de Hoje</CardTitle>
-              <CardDescription>Horários e dosagens</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {dashboardData?.todayMedications?.length === 0 ? (
-                <p className="text-sm text-gray-500">Nenhuma medicação para hoje</p>
-              ) : (
-                <div className="space-y-4">
-                  {dashboardData?.todayMedications?.map((medication) => (
-                    <div
-                      key={medication.id}
-                      className="border-l-4 border-green-500 pl-4 py-2"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-medium text-gray-900">
-                            {medication.name}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            {medication.dosage}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {medication.frequency}
-                          </p>
-                        </div>
-                        <div className={`px-2 py-1 rounded text-xs ${
-                          medication.isActive
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {medication.isActive ? 'Ativo' : 'Inativo'}
-                        </div>
-                      </div>
-                      {medication.notes && (
-                        <p className="text-sm text-gray-600 mt-2">
-                          {medication.notes}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <m.div variants={staggerItem}>
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Pill className="h-5 w-5 text-success" />
+                  Medicações de Hoje
+                </CardTitle>
+                <CardDescription>Horários e dosagens programados</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!dashboardData?.todayMedications?.length ? (
+                  <EmptyState
+                    icon={Pill}
+                    title="Nenhuma medicação para hoje"
+                    description="As medicações programadas aparecerão aqui."
+                    action={{
+                      label: 'Adicionar medicação',
+                      onClick: () => {/* TODO: Navigate to medications */},
+                    }}
+                  />
+                ) : (
+                  <m.div 
+                    variants={staggerContainer}
+                    initial="hidden"
+                    animate="visible"
+                    className="space-y-3"
+                  >
+                    {dashboardData.todayMedications.map((medication) => (
+                      <m.div key={medication.id} variants={staggerItem}>
+                        <MedicationItem
+                          name={medication.name}
+                          dosage={medication.dosage}
+                          frequency={medication.frequency}
+                          status={medication.isActive ? 'active' : 'paused'}
+                          nextDose={medication.nextDose ? new Date(medication.nextDose) : undefined}
+                        />
+                      </m.div>
+                    ))}
+                  </m.div>
+                )}
+              </CardContent>
+            </Card>
+          </m.div>
         </div>
 
         {/* Recent Exams */}
         {dashboardData?.recentExams && dashboardData.recentExams.length > 0 && (
-          <Card className="mt-8">
-            <CardHeader>
-              <CardTitle>Exames Recentes</CardTitle>
-              <CardDescription>Últimos resultados</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {dashboardData.recentExams.map((exam) => (
-                  <div
-                    key={exam.id}
-                    className="border-l-4 border-purple-500 pl-4 py-2"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">{exam.type}</p>
-                        <p className="text-sm text-gray-500">
+          <m.div variants={staggerItem}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  Exames Recentes
+                </CardTitle>
+                <CardDescription>Últimos resultados e anexos</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <m.div 
+                  variants={staggerContainer}
+                  initial="hidden"
+                  animate="visible"
+                  className="space-y-4"
+                >
+                  {dashboardData.recentExams.map((exam) => (
+                    <m.div
+                      key={exam.id}
+                      variants={staggerItem}
+                      className="flex items-start justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground">{exam.type}</p>
+                        <p className="text-sm text-muted-foreground">
                           {new Date(exam.date).toLocaleDateString('pt-BR')}
                         </p>
                         {exam.result && (
-                          <p className="text-sm text-gray-600 mt-2">
-                            Resultado: {exam.result}
+                          <p className="text-sm text-muted-foreground mt-2">
+                            <span className="font-medium text-foreground">Resultado:</span> {exam.result}
                           </p>
                         )}
                         {exam.notes && (
-                          <p className="text-sm text-gray-600 mt-1">
+                          <p className="text-sm text-muted-foreground mt-1">
                             {exam.notes}
                           </p>
                         )}
                       </div>
                       {exam.attachments && exam.attachments.length > 0 && (
-                        <div className="text-sm text-blue-600">
-                          {exam.attachments.length} anexo(s)
+                        <div className="flex items-center gap-1 text-sm text-primary font-medium">
+                          <FileText className="h-4 w-4" />
+                          {exam.attachments.length}
                         </div>
                       )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                    </m.div>
+                  ))}
+                </m.div>
+              </CardContent>
+            </Card>
+          </m.div>
         )}
-      </main>
-    </div>
+      </m.div>
+    </MainLayout>
   );
 }
 

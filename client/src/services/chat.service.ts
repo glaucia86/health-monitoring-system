@@ -1,14 +1,15 @@
 import api from '@/lib/axios';
-import { ChatMessage, ChatRequest, ChatResponse, Document } from '@/types';
+import { ChatMessage, ChatRequest, ChatResponse } from '@/types';
 
 export interface DocumentListItem {
   id: string;
   filename: string;
   url: string;
   type: string;
+  size?: number;
   tags: string[];
   content?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }

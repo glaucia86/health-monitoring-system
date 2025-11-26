@@ -36,6 +36,7 @@ export interface Medication {
   frequency: string;
   startDate: Date;
   endDate?: Date;
+  nextDose?: Date | string;
   notes?: string;
   isActive: boolean;
   createdAt: Date;
@@ -76,7 +77,7 @@ export interface Document {
   size: number;
   url: string;
   tags: string[];
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
 }
