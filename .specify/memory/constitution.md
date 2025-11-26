@@ -1,50 +1,44 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# Health Monitoring System Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Library-First
+Every new feature should be built as reusable components first. Components must be self-contained, independently testable, and properly documented. Prefer composition over inheritance and keep components focused on a single responsibility.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Accessibility-First
+All UI components must meet WCAG 2.1 AA compliance. This includes proper ARIA labels, keyboard navigation support, color contrast ratios (4.5:1 minimum), and screen reader compatibility. Accessibility is a non-negotiable requirement for every feature.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Design System Consistency
+Use established design tokens and component patterns from the design system. Never introduce custom colors, spacing, or typography outside of the defined token system. All visual elements must follow the healthcare-focused color palette (Teal primary, Rose accent).
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Performance Standards
+- Lighthouse Performance score > 90
+- First Contentful Paint (FCP) < 1.5s
+- Largest Contentful Paint (LCP) < 2.5s
+- Cumulative Layout Shift (CLS) < 0.1
+- Animations must be SSR-compatible and use GPU-accelerated properties
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Simplicity (YAGNI)
+Start with the simplest solution that works. Avoid premature optimization and over-engineering. Use existing libraries (shadcn/ui, Framer Motion) rather than building custom solutions unless absolutely necessary.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Technology Constraints
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+- **Framework**: Next.js 15 with App Router (React 19)
+- **Styling**: Tailwind CSS 4 with oklch color system
+- **Components**: shadcn/ui (new-york style) as base
+- **Animation**: Framer Motion for complex animations
+- **State**: Zustand for UI state, React Query for server state
+- **Icons**: Lucide React exclusively
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## Development Workflow
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+1. **Component Development**: Create components in isolation before integrating into pages
+2. **Progressive Enhancement**: Features should work without JavaScript where possible
+3. **Mobile-First Responsive**: Design for mobile, enhance for desktop
+4. **Code Review**: All changes require review for accessibility and design system compliance
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution supersedes all other development practices for this project. Any amendments require documentation, team approval, and a migration plan for existing code.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2025-11-26 | **Last Amended**: 2025-11-26
