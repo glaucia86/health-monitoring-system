@@ -31,7 +31,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { staggerContainer, staggerItem } from '@/lib/motion';
 import { toast } from 'sonner';
-import { formatCPF, unformatCPF, validateCPF } from '@/lib/formatCpf';
+import { formatCPF, unformatCPF } from '@/lib/formatCpf';
 
 // Zod validation schema
 const registerSchema = z.object({
@@ -46,8 +46,7 @@ const registerSchema = z.object({
   cpf: z
     .string()
     .min(1, 'CPF é obrigatório')
-    .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, 'CPF inválido (formato: 000.000.000-00)')
-    .refine((val) => validateCPF(val), { message: 'CPF inválido' }),
+    .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, 'CPF inválido (formato: 000.000.000-00)'),
   birthdate: z
     .string()
     .min(1, 'Data de nascimento é obrigatória'),
