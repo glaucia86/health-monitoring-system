@@ -38,7 +38,7 @@ const registerSchema = z.object({
   name: z
     .string()
     .min(1, 'Nome é obrigatório')
-    .min(3, 'Nome deve ter no mínimo 3 caracteres'),
+    .min(2, 'Nome deve ter no mínimo 2 caracteres'),
   email: z
     .string()
     .min(1, 'Email é obrigatório')
