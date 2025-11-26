@@ -53,7 +53,8 @@ const registerSchema = z.object({
     .min(1, 'Data de nascimento é obrigatória'),
   phone: z
     .string()
-    .min(1, 'Telefone é obrigatório'),
+    .min(1, 'Telefone é obrigatório')
+    .min(10, 'Telefone deve ter pelo menos 10 dígitos'),
   password: z
     .string()
     .min(1, 'Senha é obrigatória')
