@@ -19,7 +19,9 @@ export function cn(...inputs: ClassValue[]) {
  * truncateId("short")                                    // "short"
  */
 export function truncateId(id: string, length: number = 8): string {
-  if (!id || id.length <= length * 2) {
+  // Threshold must account for the 3 characters of "..." in the truncated output
+  // Only truncate if the result (length + 3 + length) is shorter than the original
+  if (!id || id.length <= length * 2 + 3) {
     return id || "";
   }
   return `${id.slice(0, length)}...${id.slice(-length)}`;
