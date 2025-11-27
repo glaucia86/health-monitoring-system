@@ -56,21 +56,23 @@ export function Sidebar({
           transition={{ duration: 0.2, ease: 'easeInOut' }}
           className={cn(
             'flex flex-col h-full bg-card border-r border-border',
-            'relative overflow-hidden',
+            'relative overflow-visible',
             className
           )}
         >
-          {children}
+          {/* Inner container with overflow-hidden for content */}
+          <div className="flex flex-col h-full overflow-hidden">
+            {children}
+          </div>
 
-          {/* Collapse Toggle Button */}
+          {/* Collapse Toggle Button - positioned outside the sidebar */}
           <div className="absolute top-20 -right-3 z-10">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="outline"
-                  size="icon"
                   onClick={() => setCollapsed(!collapsed)}
-                  className="h-6 w-6 rounded-full bg-background border shadow-sm hover:bg-muted"
+                  className="h-6 w-6 min-h-6 min-w-6 p-0 rounded-full bg-background border shadow-sm hover:bg-muted"
                   aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'}
                 >
                   {collapsed ? (
