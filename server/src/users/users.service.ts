@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -197,44 +197,61 @@ export class UsersService {
     const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
     const filename = `${userId}${ext}`;
 
-    // Remove old avatars with different extensions
-    this.fileService.removeMatchingFiles(
-      this.AVATAR_UPLOAD_DIR,
-      new RegExp(`^${userId}\\.`)
-    );
+    // Get current avatar URL (exact path stored in DB)
+    const currentUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { avatarUrl: true },
+    });
 
-    // Upload new avatar
+    // Upload new avatar file first – throws on I/O failure
     const relativePath = this.fileService.uploadFile({
       destinationDir: this.AVATAR_UPLOAD_DIR,
       filename,
       buffer: file.buffer,
     });
 
-    // Update user with avatar URL
     const avatarUrl = `/${relativePath.replace(/\\/g, '/')}`;
-    const updatedUser = await this.prisma.user.update({
-      where: { id: userId },
-      data: { avatarUrl },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        cpf: true,
-        birthDate: true,
-        phone: true,
-        address: true,
-        emergencyContact: true,
-        emergencyPhone: true,
-        avatarUrl: true,
-        createdAt: true,
-      },
-    });
 
-    // Audit log
-    this.auditService.logAvatarUpdate(userId, 'upload', filename);
+    try {
+      const updatedUser = await this.prisma.user.update({
+        where: { id: userId },
+        data: { avatarUrl },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          cpf: true,
+          birthDate: true,
+          phone: true,
+          address: true,
+          emergencyContact: true,
+          emergencyPhone: true,
+          avatarUrl: true,
+          createdAt: true,
+        },
+      });
 
-    return UserProfileMapper.toProfileResponseFromPartial(updatedUser);
+      // Remove old avatar file after successful DB update
+      if (currentUser?.avatarUrl) {
+        const oldFilePath = this.fileService.resolveFilePath(currentUser.avatarUrl);
+        if (oldFilePath) {
+          this.fileService.removeFile({ filePath: oldFilePath, suppressErrors: true });
+        }
+      }
+
+      // Audit log
+      this.auditService.logAvatarUpdate(userId, 'upload', filename);
+
+      return UserProfileMapper.toProfileResponseFromPartial(updatedUser);
+    } catch (error) {
+      // DB update failed – best-effort cleanup of newly uploaded file
+      const newFilePath = this.fileService.resolveFilePath(avatarUrl);
+      if (newFilePath) {
+        this.fileService.removeFile({ filePath: newFilePath, suppressErrors: true });
+      }
+      throw error;
+    }
   }
 
   /**

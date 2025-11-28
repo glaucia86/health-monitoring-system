@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Check, ChevronsUpDown } from "lucide-react"
-import { getCountries, getCountryCallingCode } from "react-phone-number-input"
+import { Country, getCountries, getCountryCallingCode } from "react-phone-number-input"
 import en from "react-phone-number-input/locale/en.json"
 
 import { cn } from "@/lib/utils"
@@ -31,8 +31,8 @@ export function CountrySelect({ value, onChange, disabled }: CountrySelectProps)
   const [open, setOpen] = React.useState(false)
   const countries = getCountries()
 
-  const selectedCountryName = value ? en[value as keyof typeof en] : "Selecione..."
-  const selectedCallingCode = value ? `+${getCountryCallingCode(value as any)}` : ""
+  const selectedCountryName = value ? en[value as Country] : "Selecione..."
+  const selectedCallingCode = value ? `+${getCountryCallingCode(value as Country)}` : ""
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -68,8 +68,9 @@ export function CountrySelect({ value, onChange, disabled }: CountrySelectProps)
             <CommandEmpty>Nenhum país encontrado.</CommandEmpty>
             <CommandGroup>
               {countries.map((country) => {
-                const countryName = en[country as keyof typeof en]
-                const callingCode = getCountryCallingCode(country as any)
+                const code = country as Country
+                const countryName = en[code]
+                const callingCode = getCountryCallingCode(code)
                 
                 return (
                   <CommandItem

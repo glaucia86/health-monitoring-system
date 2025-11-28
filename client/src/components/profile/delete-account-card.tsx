@@ -43,11 +43,13 @@ export function DeleteAccountCard() {
       toast.success('Conta desativada com sucesso');
       logout();
       router.push('/login');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting account:', error);
       const message =
-        error?.response?.data?.message ||
-        'Erro ao excluir conta. Tente novamente.';
+        typeof error === 'object' && error !== null && 'response' in error &&
+        (error as { response?: { data?: { message?: string } } }).response?.data?.message
+          ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+          : 'Erro ao excluir conta. Tente novamente.';
       toast.error(message);
     } finally {
       setIsDeleting(false);

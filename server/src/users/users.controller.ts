@@ -28,6 +28,9 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../auth/dto/user-role.enum';
 
 @ApiTags('Users')
 @Controller('users')
@@ -124,11 +127,13 @@ export class UsersController {
   }
 
   @Delete('me')
-  @UseGuards(JwtAuthGuard)
+  @Roles(UserRole.ADMIN)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Delete authenticated user account' })
+  @ApiOperation({ summary: 'Desativar conta do usuário autenticado (apenas administradores)' })
   @ApiResponse({ status: 200, description: 'Account deleted successfully' })
   @ApiResponse({ status: 401, description: 'Not authenticated' })
+  @ApiResponse({ status: 403, description: 'Forbidden: requires admin role' })
   async removeSelf(@Request() req: any) {
     return this.usersService.removeSelf(req.user.userId);
   }

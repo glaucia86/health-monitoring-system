@@ -112,6 +112,19 @@ export class FileService {
   }
 
   /**
+   * Lists all files in a directory as absolute paths
+   * @param dirPath - Directory to read
+   */
+  listAbsoluteFilePaths(dirPath: string): string[] {
+    if (!fs.existsSync(dirPath)) {
+      return [];
+    }
+
+    const filenames = fs.readdirSync(dirPath);
+    return filenames.map(filename => path.join(dirPath, filename));
+  }
+
+  /**
    * Resolves an absolute file path from a relative URL
    * @param relativeUrl - Relative URL (e.g., /uploads/avatars/user.jpg)
    * @returns Absolute file system path

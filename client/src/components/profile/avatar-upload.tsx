@@ -131,7 +131,7 @@ export function AvatarUpload({
 
   // Max file size: 2MB
   const MAX_FILE_SIZE = 2 * 1024 * 1024;
-  const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  const ACCEPTED_TYPES = useRef(['image/jpeg', 'image/png', 'image/webp']);
 
   // Focus select button when dialog opens
   useEffect(() => {
@@ -159,7 +159,7 @@ export function AvatarUpload({
   const processFile = useCallback(
     (file: File) => {
       // Validate file type
-      if (!ACCEPTED_TYPES.includes(file.type)) {
+      if (!ACCEPTED_TYPES.current.includes(file.type)) {
         setError('Formato inválido. Use JPEG, PNG ou WebP.');
         return;
       }
@@ -181,7 +181,7 @@ export function AvatarUpload({
       };
       reader.readAsDataURL(file);
     },
-    []
+    [MAX_FILE_SIZE]
   );
 
   const handleFileSelect = useCallback(
@@ -252,7 +252,7 @@ export function AvatarUpload({
         setPreviewUrl(e.target?.result as string);
       };
       reader.readAsDataURL(croppedFile);
-    } catch (error) {
+    } catch {
       setError('Erro ao recortar imagem. Tente novamente.');
     }
   };

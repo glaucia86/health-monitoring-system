@@ -38,16 +38,10 @@ export function ProfileForm({
   
   const defaultValues: ProfileFormData = {
     name: user?.name || '',
-    // Ensure phone numbers are in E.164 format for the input component
-    // If the number doesn't start with +, assume it's a Brazilian number (legacy data)
-    phone: user?.phone 
-      ? (user.phone.startsWith('+') ? user.phone : `+55${user.phone.replace(/\D/g, '')}`) 
-      : '',
+    phone: user?.phone || '',
     address: user?.address || '',
     emergencyContact: user?.emergencyContact || '',
-    emergencyPhone: user?.emergencyPhone 
-      ? (user.emergencyPhone.startsWith('+') ? user.emergencyPhone : `+55${user.emergencyPhone.replace(/\D/g, '')}`) 
-      : '',
+    emergencyPhone: user?.emergencyPhone || '',
   };
 
   const {
@@ -64,7 +58,7 @@ export function ProfileForm({
   });
 
   // Use custom hooks for draft management and unsaved changes warning
-  const { hasDraft, clearDraft } = useFormDraft({
+  const { clearDraft } = useFormDraft({
     draftKey: 'profile-form-draft',
     isDirty,
     watch,
