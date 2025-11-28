@@ -38,6 +38,8 @@ export default function ChatPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Altura fixa grande para área de chat (padrão AI)
+
   // Handle copy conversation ID to clipboard
   const handleCopyId = async () => {
     if (!conversationId) return;
@@ -165,27 +167,24 @@ export default function ChatPage() {
         variants={fadeIn}
         initial="hidden"
         animate="visible"
-        className="space-y-6"
+        className="h-[calc(100vh-64px)] flex flex-col gap-2"
       >
-        {/* Page Header */}
-        <PageHeader
-          title="Chat com IA"
-          description="Assistente de Saúde Inteligente"
-          icon={MessageSquare}
-          breadcrumbs={[
-            { label: 'Dashboard', href: '/dashboard' },
-            { label: 'Chat com IA' },
-          ]}
-        />
+        {/* Page Header - compacto */}
+        <div className="flex-shrink-0">
+          <PageHeader
+            title="Chat com IA"
+            icon={MessageSquare}
+          />
+        </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Content - altura máxima */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
           {/* Chat Area */}
           <m.div 
-            className="lg:col-span-2"
+            className="lg:col-span-2 h-full min-h-0"
             variants={scaleIn}
           >
-            <Card className="h-[calc(100vh-280px)] flex flex-col overflow-hidden border-border/50 shadow-sm">
+            <Card className="h-full flex flex-col border-border/50 shadow-sm">
               <CardHeader className="flex-shrink-0 border-b bg-muted/30">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <MessageSquare className="h-5 w-5 text-primary" />
@@ -194,7 +193,7 @@ export default function ChatPage() {
               </CardHeader>
               <CardContent className="flex-1 flex flex-col p-0 min-h-0 overflow-hidden">
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4" ref={scrollRef}>
+                <div className="flex-1 overflow-y-auto p-4 min-h-0" ref={scrollRef}>
                   {messages.length === 0 ? (
                     <m.div 
                       className="flex items-center justify-center h-full"
@@ -242,8 +241,8 @@ export default function ChatPage() {
                   )}
                 </div>
 
-                {/* Chat Input */}
-                <div className="border-t bg-background p-4">
+                {/* Chat Input - rodapé fixo */}
+                <div className="flex-shrink-0 border-t bg-background p-4">
                   <ChatInput
                     value={input}
                     onChange={setInput}
@@ -268,7 +267,7 @@ export default function ChatPage() {
 
           {/* Sidebar */}
           <m.div 
-            className="lg:col-span-1 space-y-4"
+            className="lg:col-span-1 space-y-4 overflow-y-auto min-h-0"
             variants={staggerContainer}
             initial="hidden"
             animate="visible"

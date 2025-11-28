@@ -21,9 +21,10 @@
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-## Description
+## Versões Futuras
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- Backend da aplicação de monitoramento de saúde, construído com o framework [Nest](https://github.com/nestjs/nest).
+- Rotinas automáticas de manutenção, incluindo a limpeza periódica de arquivos de avatar órfãos em `uploads/avatars` (arquivos não mais referenciados em `user.avatarUrl`), ajudando a otimizar o uso de armazenamento local ou em nuvem.
 
 ## Project setup
 

@@ -155,7 +155,7 @@ export function MainLayout({
   );
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="fixed inset-0 flex overflow-hidden bg-background">
       {/* Desktop Sidebar */}
       <div className="hidden md:flex">
         <Sidebar
@@ -199,7 +199,7 @@ export function MainLayout({
               exit="exit"
               className="h-full"
             >
-              <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl">
+              <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl h-full">
                 {children}
               </div>
             </m.div>

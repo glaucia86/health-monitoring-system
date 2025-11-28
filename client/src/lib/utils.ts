@@ -26,3 +26,32 @@ export function truncateId(id: string, length: number = 8): string {
   }
   return `${id.slice(0, length)}...${id.slice(-length)}`;
 }
+
+/**
+ * Resolves asset URLs to absolute URLs using the API base URL.
+ * Converts relative paths (e.g., /uploads/avatars/...) to full URLs.
+ *
+ * @param url - The asset URL to resolve (can be relative or absolute)
+ * @returns Full absolute URL, or undefined if input is null/undefined
+ *
+ * @example
+ * resolveAssetUrl("/uploads/avatars/123.jpg")  // "http://localhost:3001/uploads/avatars/123.jpg"
+ * resolveAssetUrl("https://cdn.example.com/avatar.jpg")  // "https://cdn.example.com/avatar.jpg"
+ * resolveAssetUrl(null)  // undefined
+ */
+export function resolveAssetUrl(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+  
+  // If already an absolute URL (http:// or https://), return as is
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  
+  // For relative URLs, prepend the API base URL
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  
+  // Ensure the URL starts with / and doesn't have double slashes
+  const normalizedUrl = url.startsWith('/') ? url : `/${url}`;
+  
+  return `${apiBaseUrl}${normalizedUrl}`;
+}
