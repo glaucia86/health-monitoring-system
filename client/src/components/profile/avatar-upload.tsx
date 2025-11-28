@@ -316,12 +316,15 @@ export function AvatarUpload({
             aria-haspopup="dialog"
           >
             <Avatar className="h-24 w-24 border-4 border-background shadow-lg transition-transform group-hover:scale-105">
-              <AvatarImage
-                src={resolvedAvatarUrl || undefined}
-                alt=""
-                aria-hidden="true"
-                className="object-cover"
-              />
+              {resolvedAvatarUrl && (
+                <AvatarImage
+                  key={resolvedAvatarUrl}
+                  src={resolvedAvatarUrl}
+                  alt=""
+                  aria-hidden="true"
+                  className="object-cover"
+                />
+              )}
               <AvatarFallback 
                 className="bg-primary text-2xl font-semibold text-primary-foreground"
                 aria-hidden="true"
@@ -488,11 +491,14 @@ export function AvatarUpload({
                 <div className="w-full space-y-4">
                   <div className="flex items-center justify-center">
                     <Avatar className="h-32 w-32 border-4 border-muted">
-                      <AvatarImage
-                        src={resolvedAvatarUrl || undefined}
-                        alt="Foto de perfil atual"
-                        className="object-cover"
-                      />
+                      {resolvedAvatarUrl && (
+                        <AvatarImage
+                          key={resolvedAvatarUrl}
+                          src={resolvedAvatarUrl}
+                          alt="Foto de perfil atual"
+                          className="object-cover"
+                        />
+                      )}
                       <AvatarFallback 
                         className="bg-primary text-3xl font-semibold text-primary-foreground"
                       >

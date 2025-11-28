@@ -31,7 +31,9 @@ export default function ProfilePage() {
 
   // Mutation for updating profile
   const updateProfileMutation = useMutation({
-    mutationFn: (data: ProfileFormData) => profileService.updateProfile(data),
+    mutationFn: (data: ProfileFormData) => {
+      return profileService.updateProfile(data);
+    },
     onSuccess: (updatedUser) => {
       updateUser(updatedUser);
       toast.success('Perfil atualizado com sucesso!');
@@ -44,7 +46,9 @@ export default function ProfilePage() {
 
   // Mutation for uploading avatar
   const uploadAvatarMutation = useMutation({
-    mutationFn: (file: File) => profileService.uploadAvatar(file),
+    mutationFn: (file: File) => {
+      return profileService.uploadAvatar(file);
+    },
     onSuccess: (updatedUser) => {
       updateUser(updatedUser);
       toast.success('Foto atualizada com sucesso!');

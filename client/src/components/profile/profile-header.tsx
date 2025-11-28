@@ -104,13 +104,14 @@ export function ProfileHeader({
             className="h-20 w-20 border-4 border-primary/20 sm:h-24 sm:w-24 md:h-32 md:w-32"
             aria-label={`Foto de perfil${user.name ? ` de ${user.name}` : ''}`}
           >
-            {user.avatarUrl ? (
+            {avatarSrc && (
               <AvatarImage
+                key={avatarSrc}
                 src={avatarSrc}
                 alt=""
                 aria-hidden="true"
               />
-            ) : null}
+            )}
             <AvatarFallback 
               className="bg-primary/10 text-xl font-semibold text-primary sm:text-2xl md:text-3xl"
               aria-label={`Iniciais: ${initials}`}
