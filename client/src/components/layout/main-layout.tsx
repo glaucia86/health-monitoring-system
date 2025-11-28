@@ -155,7 +155,7 @@ export function MainLayout({
   );
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="fixed inset-0 flex overflow-hidden bg-background">
       {/* Desktop Sidebar */}
       <div className="hidden md:flex">
         <Sidebar

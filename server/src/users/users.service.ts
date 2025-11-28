@@ -7,6 +7,7 @@ import { UserProfileMapper } from './mappers/user-profile.mapper';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../common/services/audit.service';
 import { FileService } from '../common/services/file.service';
+import { LockService } from '../common/services/lock.service';
 import * as path from 'path';
 
 @Injectable()
@@ -18,6 +19,7 @@ export class UsersService {
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
     private readonly fileService: FileService,
+    private readonly lockService: LockService,
   ) {}
 
   create(createUserDto: CreateUserDto) {
@@ -192,16 +194,19 @@ export class UsersService {
 
   /**
    * T011: Upload avatar to /uploads/avatars/{userId}.{ext}
+   * Protected by lock to prevent race conditions in concurrent uploads
    */
   async uploadAvatar(userId: string, file: Express.Multer.File): Promise<UserProfileResponseDto> {
-    const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
-    const filename = `${userId}${ext}`;
+    // Acquire lock for this user to prevent concurrent avatar uploads
+    return this.lockService.withLock(`avatar-upload-${userId}`, async () => {
+      const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+      const filename = `${userId}${ext}`;
 
-    // Get current avatar URL (exact path stored in DB)
-    const currentUser = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { avatarUrl: true },
-    });
+      // Get current avatar URL (exact path stored in DB)
+      const currentUser = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { avatarUrl: true },
+      });
 
     // Upload new avatar file first – throws on I/O failure
     const relativePath = this.fileService.uploadFile({
@@ -252,6 +257,7 @@ export class UsersService {
       }
       throw error;
     }
+    }); // End of lock
   }
 
   /**

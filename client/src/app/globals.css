@@ -240,12 +240,12 @@
   * {
     @apply border-border outline-ring/50;
   }
-  html,
-  body {
+  html {
     height: 100%;
-    overflow: hidden;
+    overflow-x: hidden;
   }
   body {
+    min-height: 100%;
     @apply bg-background text-foreground;
   }
 }

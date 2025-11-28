@@ -28,6 +28,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { MagicNumberFileTypeValidator } from '../common/validators/magic-number-file-type.validator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../auth/dto/user-role.enum';
@@ -98,6 +99,10 @@ export class UsersController {
         validators: [
           new MaxFileSizeValidator({ maxSize: 2 * 1024 * 1024 }), // 2MB
           new FileTypeValidator({ fileType: /(jpeg|jpg|png|webp)$/i }),
+          // Security: Verify actual file content by magic numbers, not just MIME type header
+          new MagicNumberFileTypeValidator({
+            allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+          }),
         ],
       }),
     )

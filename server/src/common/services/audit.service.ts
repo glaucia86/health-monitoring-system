@@ -169,7 +169,6 @@ export class AuditService {
     changes: any,
     oldValues?: any,
     ipAddress?: string,
-    userAgent?: string,
   ) {
     try {
       if (!oldValues) return;
@@ -203,7 +202,6 @@ export class AuditService {
             oldValue: mapping.oldValue || null,
             newValue: changes[field] || null,
             ipAddress,
-            userAgent,
           });
         }
       }
@@ -246,7 +244,6 @@ export class AuditService {
     action: 'upload' | 'remove',
     filename?: string,
     ipAddress?: string,
-    userAgent?: string,
   ) {
     try {
       await this.prisma.profileAuditLog.create({
@@ -257,7 +254,6 @@ export class AuditService {
           oldValue: action === 'upload' ? 'Sem foto' : filename || 'Foto anterior',
           newValue: action === 'upload' ? filename || 'Nova foto' : null,
           ipAddress,
-          userAgent,
         },
       });
     } catch (error) {
