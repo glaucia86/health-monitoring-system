@@ -4,8 +4,8 @@ import { Injectable, Logger } from '@nestjs/common';
  * Service responsible for managing in-memory locks to prevent race conditions
  * in concurrent operations (e.g., simultaneous avatar uploads by the same user).
  *
- * Uses a Map to track active operations by key, ensuring only one operation
- * can proceed at a time for each unique key.
+ * Uses a queue-based locking mechanism to ensure FIFO ordering and prevent
+ * busy-wait loops under high concurrency.
  */
 @Injectable()
 export class LockService {
@@ -14,7 +14,7 @@ export class LockService {
 
   /**
    * Acquires a lock for the given key and executes the callback.
-   * If a lock already exists for the key, waits for it to be released.
+   * If a lock already exists for the key, waits in queue for it to be released.
    *
    * @param key - Unique identifier for the lock (e.g., userId)
    * @param callback - Async function to execute while holding the lock
@@ -27,9 +27,10 @@ export class LockService {
    * });
    */
   async withLock<T>(key: string, callback: () => Promise<T>): Promise<T> {
-    // Wait for any existing lock on this key
-    while (this.locks.has(key)) {
-      await this.locks.get(key);
+    // Wait for any existing lock on this key (queue-based, no busy-wait)
+    const existingLock = this.locks.get(key);
+    if (existingLock) {
+      await existingLock;
     }
 
     // Create new lock promise

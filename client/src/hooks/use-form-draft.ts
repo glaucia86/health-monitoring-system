@@ -36,18 +36,8 @@ export function useFormDraft<T extends FieldValues>({
     if (savedDraft) {
       try {
         const draftData = JSON.parse(savedDraft) as T;
-
-        // Ask user if they want to restore draft
-        const restore = window.confirm(
-          'Encontramos um rascunho não salvo. Deseja restaurá-lo?'
-        );
-        
-        if (restore) {
-          reset(draftData);
-          // hasDraft will be updated by the auto-save effect after user edits
-        } else {
-          localStorage.removeItem(draftKey);
-        }
+        reset(draftData);
+        // hasDraft will be updated by the auto-save effect after user edits
       } catch (error) {
         console.error('Error loading draft:', error);
         localStorage.removeItem(draftKey);

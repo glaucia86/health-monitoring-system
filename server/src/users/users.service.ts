@@ -77,42 +77,45 @@ export class UsersService {
    * - Logs the event
    */
   async removeSelf(userId: string): Promise<void> {
-    // Check if user has any associated patients
-    const hasPatients = await this.prisma.patient.findFirst({
-      where: { userId },
-      select: { id: true },
-    });
+    // Use transaction to prevent race condition between patient check and account deletion
+    await this.prisma.$transaction(async (prisma) => {
+      // Check if user has any associated patients (inside transaction for consistency)
+      const hasPatients = await prisma.patient.findFirst({
+        where: { userId },
+        select: { id: true },
+      });
 
-    if (hasPatients) {
-      throw new BadRequestException(
-        'Não é possível excluir a conta enquanto houver pacientes associados. Remova ou transfira os pacientes para outro profissional antes de excluir sua conta.',
-      );
-    }
-
-    // Get current avatar URL
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { avatarUrl: true },
-    });
-
-    // Remove avatar file if exists
-    if (user?.avatarUrl) {
-      const filePath = this.fileService.resolveFilePath(user.avatarUrl);
-      if (filePath) {
-        this.fileService.removeFile({ filePath, suppressErrors: true });
+      if (hasPatients) {
+        throw new BadRequestException(
+          'Não é possível excluir a conta enquanto houver pacientes associados. Remova ou transfira os pacientes para outro profissional antes de excluir sua conta.',
+        );
       }
-    }
 
-    // Soft delete user from DB
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        isActive: false,
-        deletedAt: new Date(),
-      },
+      // Get current avatar URL
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { avatarUrl: true },
+      });
+
+      // Soft delete user from DB
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          isActive: false,
+          deletedAt: new Date(),
+        },
+      });
+
+      // Remove avatar file if exists (after successful DB update)
+      if (user?.avatarUrl) {
+        const filePath = this.fileService.resolveFilePath(user.avatarUrl);
+        if (filePath) {
+          this.fileService.removeFile({ filePath, suppressErrors: true });
+        }
+      }
     });
 
-    // Audit log
+    // Audit log (outside transaction, non-critical operation)
     this.auditService.logUserDeletion(userId);
   }
 

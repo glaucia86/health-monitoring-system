@@ -63,13 +63,7 @@ export class UsersController {
   @ApiResponse({ status: 401, description: 'Not authenticated' })
   @ApiResponse({ status: 400, description: 'Invalid data' })
   async updateProfile(@Request() req: any, @Body() dto: UpdateProfileDto) {
-    try {
-      const result = await this.usersService.updateProfile(req.user.userId, dto);
-      return result;
-    } catch (error) {
-      console.error('❌ [DEBUG] Update failed:', error);
-      throw error;
-    }
+    return this.usersService.updateProfile(req.user.userId, dto);
   }
 
   @Patch('me/avatar')
