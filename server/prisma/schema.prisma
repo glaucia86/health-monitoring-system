@@ -27,10 +27,42 @@ model User {
   password  String
   name      String?
   role      Role     @default(VIEWER)
+  
+  // Profile fields
+  cpf              String?   @unique   // CPF (immutable after registration)
+  birthDate        DateTime?           // Data de nascimento (immutable)
+  phone            String?             // Telefone
+  address          String?             // Endereço completo
+  emergencyContact String?             // Nome do contato de emergência
+  emergencyPhone   String?             // Telefone de emergência
+  avatarUrl        String?             // URL do avatar (local ou cloud)
+  isActive         Boolean  @default(true)
+  deletedAt        DateTime?
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   patients  Patient[]
+  auditLogs ProfileAuditLog[]
+}
+
+model ProfileAuditLog {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  action      String   // "update", "avatar_upload", "avatar_remove"
+  fieldName   String?  // Nome do campo alterado (para updates de perfil)
+  oldValue    String?  // Valor anterior (nullable para criações)
+  newValue    String?  // Novo valor (nullable para remoções)
+  
+  ipAddress   String?  // IP de origem da requisição
+  userAgent   String?  // User agent do navegador
+  
+  changedAt   DateTime @default(now())
+  
+  @@index([userId, changedAt])
+  @@index([userId, fieldName])
 }
 
 model Patient {

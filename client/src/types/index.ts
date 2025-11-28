@@ -4,6 +4,24 @@ export interface User {
   name: string;
   role: string;
   patientId?: string;
+  
+  // Profile fields
+  cpf?: string;              // Masked display (***.***.***-XX)
+  birthDate?: string;        // ISO date string
+  phone?: string;
+  address?: string;
+  emergencyContact?: string;
+  emergencyPhone?: string;
+  avatarUrl?: string;
+  createdAt?: string;        // ISO date string
+}
+
+export interface UpdateProfilePayload {
+  name?: string;
+  phone?: string;
+  address?: string;
+  emergencyContact?: string;
+  emergencyPhone?: string;
 }
 
 export interface LoginRequest {
@@ -18,6 +36,7 @@ export interface RegisterRequest {
   cpf: string;
   birthdate: string;
   phone: string;
+  role?: string;
   address?: string;
   emergencyContact?: string;
   emergencyPhone?: string;

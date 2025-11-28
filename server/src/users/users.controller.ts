@@ -1,8 +1,35 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Request,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
+@ApiTags('Users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -22,6 +49,92 @@ export class UsersController {
     return this.usersService.findOne(id);
   }
 
+  // ===== PROFILE ENDPOINTS =====
+
+  @Patch('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update authenticated user profile' })
+  @ApiResponse({ status: 200, description: 'Profile updated successfully' })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
+  @ApiResponse({ status: 400, description: 'Invalid data' })
+  async updateProfile(@Request() req: any, @Body() dto: UpdateProfileDto) {
+    try {
+      const result = await this.usersService.updateProfile(req.user.userId, dto);
+      return result;
+    } catch (error) {
+      console.error('❌ [DEBUG] Update failed:', error);
+      throw error;
+    }
+  }
+
+  @Patch('me/avatar')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @UseInterceptors(FileInterceptor('avatar'))
+  @ApiOperation({ summary: 'Upload user avatar' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        avatar: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Avatar uploaded successfully' })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
+  @ApiResponse({ status: 400, description: 'Invalid file type or size' })
+  async uploadAvatar(
+    @Request() req: any,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 2 * 1024 * 1024 }), // 2MB
+          new FileTypeValidator({ fileType: /(jpeg|jpg|png|webp)$/i }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+  ) {
+    return this.usersService.uploadAvatar(req.user.userId, file);
+  }
+
+  @Delete('me/avatar')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove user avatar' })
+  @ApiResponse({ status: 200, description: 'Avatar removed successfully' })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
+  async removeAvatar(@Request() req: any) {
+    return this.usersService.removeAvatar(req.user.userId);
+  }
+
+  @Get('me/history')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get profile change history' })
+  @ApiResponse({ status: 200, description: 'Profile history retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
+  async getProfileHistory(@Request() req: any) {
+    return this.usersService.getProfileHistory(req.user.userId);
+  }
+
+  @Delete('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete authenticated user account' })
+  @ApiResponse({ status: 200, description: 'Account deleted successfully' })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
+  async removeSelf(@Request() req: any) {
+    return this.usersService.removeSelf(req.user.userId);
+  }
+
+  // ===== ADMIN/GENERIC CRUD =====
+
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(id, updateUserDto);
@@ -30,5 +143,11 @@ export class UsersController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
+  }
+
+  @Patch(':id/activate')
+  @ApiOperation({ summary: 'Reativar usuário (admin)' })
+  activate(@Param('id') id: string) {
+    return this.usersService.activate(id);
   }
 }
