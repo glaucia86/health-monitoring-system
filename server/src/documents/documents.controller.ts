@@ -23,6 +23,18 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 export class DocumentsController {
   constructor(private readonly documentsService: DocumentsService) {}
 
+  private ensurePatientContext(req: any) {
+    const patientId = req?.user?.patientId;
+
+    if (!patientId) {
+      throw new BadRequestException(
+        'Usuário não possui um paciente associado. Faça login com uma conta de paciente ou crie um perfil antes de acessar documentos.',
+      );
+    }
+
+    return patientId;
+  }
+
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Fazer upload de documento' })
@@ -79,7 +91,7 @@ export class DocumentsController {
   @ApiOperation({ summary: 'Listar todos os documentos do paciente' })
   @ApiResponse({ status: 200, description: 'Lista de documentos' })
   listDocuments(@Request() req: any) {
-    const patientId = req.user.patientId;
+    const patientId = this.ensurePatientContext(req);
     return this.documentsService.listDocuments(patientId);
   }
 
@@ -88,7 +100,7 @@ export class DocumentsController {
   @ApiResponse({ status: 200, description: 'Detalhes do documento' })
   @ApiResponse({ status: 404, description: 'Documento não encontrado' })
   getDocument(@Param('id') id: string, @Request() req: any) {
-    const patientId = req.user.patientId;
+    const patientId = this.ensurePatientContext(req);
     return this.documentsService.getDocument(id, patientId);
   }
 
@@ -97,7 +109,7 @@ export class DocumentsController {
   @ApiResponse({ status: 200, description: 'Documento deletado com sucesso' })
   @ApiResponse({ status: 404, description: 'Documento não encontrado' })
   deleteDocument(@Param('id') id: string, @Request() req: any) {
-    const patientId = req.user.patientId;
+    const patientId = this.ensurePatientContext(req);
     const userId = req.user.userId;
     return this.documentsService.deleteDocument(id, patientId, userId);
   }

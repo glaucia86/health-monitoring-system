@@ -54,10 +54,27 @@ export default function ChatPage() {
   };
 
   // Fetch documents
-  const { data: documents = [], isLoading: isLoadingDocuments } = useQuery({
+  const {
+    data: documentsData,
+    error: documentsError,
+    isLoading: isLoadingDocuments,
+  } = useQuery<DocumentListItem[]>({
     queryKey: ['documents'],
     queryFn: chatService.getDocuments,
+    retry: false,
   });
+
+  const documents = (documentsData as DocumentListItem[] | undefined) ?? [];
+
+  useEffect(() => {
+    if (!documentsError) return;
+    const error = documentsError as Error & { response?: { data?: { message?: string } } };
+    toast.error('Não foi possível carregar seus documentos', {
+      description:
+        error.response?.data?.message ||
+        'Associe sua conta a um paciente antes de usar esta funcionalidade.',
+    });
+  }, [documentsError]);
 
   // Transform documents to match DocumentList component interface
   const transformedDocuments: Document[] = documents.map((doc: DocumentListItem) => ({

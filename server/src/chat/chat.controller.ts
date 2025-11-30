@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { ChatService } from './chat.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -19,7 +19,9 @@ export class ChatController {
   async sendMessage(@Request() req: any, @Body() dto: ChatMessageDto) {
     const patientId = req.user.patientId;
     if (!patientId) {
-      throw new Error('User is not associated with a patient');
+      throw new BadRequestException(
+        'Usuário sem paciente associado. Solicite acesso ou crie um paciente antes de usar o chat.',
+      );
     }
 
     return this.chatService.chat(patientId, dto.message, dto.conversationId);
