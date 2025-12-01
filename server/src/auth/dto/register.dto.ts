@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, IsOptional, IsEnum, IsDateString, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, IsOptional, IsEnum, IsDateString, MinLength, IsIn } from 'class-validator';
 import { Role } from '@prisma/client';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -53,4 +53,18 @@ export class RegisterDto {
   @IsString()
   @IsOptional()
   emergencyPhone?: string;
+
+  /**
+   * Access type chosen during registration flow.
+   * Used for UX personalization and analytics/telemetry.
+   * Does NOT affect user role or permissions.
+   */
+  @ApiPropertyOptional({
+    enum: ['caregiver', 'patient'],
+    example: 'caregiver',
+    description: 'Access type for telemetry (does not affect role)',
+  })
+  @IsOptional()
+  @IsIn(['caregiver', 'patient'])
+  accessType?: 'caregiver' | 'patient';
 }

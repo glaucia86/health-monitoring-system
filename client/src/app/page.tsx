@@ -179,7 +179,7 @@ export default function Home() {
                   <Link href="/login">Entrar</Link>
                 </Button>
                 <Button asChild>
-                  <Link href="/register">Cadastrar</Link>
+                  <Link href="/register?type=caregiver">Cadastrar</Link>
                 </Button>
               </div>
             )}
@@ -404,7 +404,7 @@ export default function Home() {
               className="flex justify-center mt-12"
             >
               <Button size="lg" asChild className="gap-2">
-                <Link href="/register">
+                <Link href="/register?type=caregiver">
                   Criar conta gratuita
                   <ArrowRight className="h-5 w-5" />
                 </Link>
@@ -492,7 +492,7 @@ export default function Home() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="lg" asChild className="gap-2">
-                  <Link href="/register">
+                  <Link href="/register?type=caregiver">
                     <CheckCircle2 className="h-5 w-5" />
                     Criar conta gratuita
                   </Link>

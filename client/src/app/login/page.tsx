@@ -20,6 +20,7 @@ import { staggerContainer, staggerItem } from '@/lib/motion';
 import { toast } from 'sonner';
 import { normalizeAccessType } from '@/types/access.types';
 import { getLoginContext } from '@/config/login-contexts';
+import { buildAuthUrl } from '@/lib/auth-url';
 
 // Zod validation schema
 const loginSchema = z.object({
@@ -88,7 +89,7 @@ function LoginFormContent() {
           <p>
             Não tem uma conta?{' '}
             <Link
-              href="/register"
+              href={buildAuthUrl('/register', accessType)}
               className="font-medium text-primary hover:text-primary/80 transition-colors"
             >
               Cadastre-se

@@ -40,6 +40,7 @@ export interface RegisterRequest {
   address?: string;
   emergencyContact?: string;
   emergencyPhone?: string;
+  accessType?: 'caregiver' | 'patient';
 }
 
 export interface AuthResponse {
