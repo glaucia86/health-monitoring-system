@@ -2,8 +2,8 @@
 
 # 🏥 Health Monitoring System
 
-### Integrated Medical Data Monitoring and Management System
-**For Patients with Advanced Breast Cancer**
+### Complete Health Monitoring Platform
+**For Caregivers and Patients**
 
 ![Version](https://img.shields.io/badge/version-1.0.0--alpha-orange?style=for-the-badge)
 ![Status](https://img.shields.io/badge/status-in%20development-yellow?style=for-the-badge)
@@ -78,12 +78,26 @@ You can test the application directly in your browser using GitHub Codespaces or
 
 ## 📋 About the Project
 
-A complete health management system with an AI assistant, developed to centralize medical data for patients with advanced breast cancer, offering:
+A complete health management system with an AI assistant, developed to centralize and simplify medical data management. The platform serves:
 
-- 📊 Interactive dashboard with exam evolution tracking
-- 💊 Medication management with reminders
-- 🤖 AI Chat to explain and organize medical information
-- 📄 Upload and analysis of medical documents
+**👨‍👩‍👧 Caregivers & Healthcare Professionals**
+- Centralized management of patient health data
+- Tracking of medications, appointments, and exams
+- Document organization and access
+
+**🧑‍🦯 Patients**
+- Full control over their own health records
+- Medication and appointment reminders
+- Easy communication with caregivers
+
+### Key Features:
+
+- 📊 **Interactive Dashboard** - Complete visualization of health history
+- 💊 **Smart Medication Management** - Reminders and intake tracking
+- 🤖 **AI Chat** - Assistant to explain exams and organize information
+- 📄 **Secure Document Upload** - Storage on Azure Blob Storage
+- 👥 **Multi-profile Support** - Caregiver and patient access
+- 🔒 **Security First** - JWT authentication and audit logging
 
 ---
 

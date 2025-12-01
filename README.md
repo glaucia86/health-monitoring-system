@@ -2,8 +2,8 @@
 
 # 🏥 Health Monitoring System
 
-### Sistema Integrado de Monitoramento e Gerenciamento de Dados Médicos
-**Para Pacientes com Câncer de Mama Avançado**
+### Plataforma Completa de Monitoramento de Saúde
+**Para Cuidadores e Pacientes**
 
 ![Version](https://img.shields.io/badge/version-1.0.0--alpha-orange?style=for-the-badge)
 ![Status](https://img.shields.io/badge/status-em%20desenvolvimento-yellow?style=for-the-badge)
@@ -78,12 +78,19 @@ Você pode testar a aplicação diretamente no navegador usando GitHub Codespace
 
 ## 📋 Sobre o Projeto
 
-Sistema completo de gerenciamento de saúde com assistente de IA, desenvolvido para centralizar dados médicos de pacientes com câncer de mama avançado, oferecendo:
+Plataforma completa de monitoramento e gerenciamento de saúde com assistente de IA, desenvolvida para centralizar dados médicos e facilitar o cuidado de pacientes por familiares e profissionais de saúde. Ideal para:
 
-- 📊 Dashboard interativo com evolução de exames
-- 💊 Gerenciamento de medicações com lembretes
+- 👨‍⚕️ **Cuidadores e Profissionais** - Gerencie múltiplos pacientes, acompanhe sinais vitais e organize medicações
+- 🧑‍🦱 **Pacientes** - Acompanhe sua saúde, receba lembretes de medicação e compartilhe dados com médicos
+
+### Principais Recursos
+
+- 📊 Dashboard interativo com evolução de exames e sinais vitais
+- 💊 Gerenciamento de medicações com lembretes inteligentes
 - 🤖 Chat com IA para explicar e organizar informações médicas
 - 📄 Upload e análise de documentos médicos
+- 🔔 Sistema de notificações e alertas
+- 📈 Relatórios detalhados e gráficos de tendências
 
 ---
 
