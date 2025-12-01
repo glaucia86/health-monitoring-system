@@ -92,7 +92,7 @@ Manter **rotas únicas** (`/login`, `/register`) e controlar contexto via `Acces
 
 * Backend precisa aceitar e logar `accessType` no fluxo de cadastro (apesar de simples).
 * É mais um conceito (AccessType) para o time entender ao lado de `Role`.
-* Requer ajuste cuidadoso em todos os CTAs para evitar inconsciências.
+* Requer ajuste cuidadoso em todos os CTAs para evitar inconsistências.
 
 ---
 
