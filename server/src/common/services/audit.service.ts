@@ -47,12 +47,12 @@ export class AuditService {
     });
   }
 
-  logUserRegistration(userId: string, email: string, ipAddress?: string) {
+  logUserRegistration(userId: string, email: string, metadata?: { accessType?: string; ipAddress?: string }) {
     this.log({
       action: AuditAction.USER_REGISTERED,
       userId,
-      metadata: { email },
-      ipAddress,
+      metadata: { email, accessType: metadata?.accessType },
+      ipAddress: metadata?.ipAddress,
     });
   }
 

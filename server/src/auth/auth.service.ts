@@ -47,8 +47,10 @@ export class AuthService {
       },
     });
 
-    // Audit log
-    this.auditService.logUserRegistration(user.id, user.email);
+    // Audit log (includes accessType for telemetry)
+    this.auditService.logUserRegistration(user.id, user.email, {
+      accessType: registerDto.accessType || 'caregiver',
+    });
 
     // Generate JWT token
     const token = this.generateToken(user);

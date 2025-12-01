@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -32,6 +32,10 @@ import { Separator } from '@/components/ui/separator';
 import { staggerContainer, staggerItem } from '@/lib/motion';
 import { toast } from 'sonner';
 import { formatCPF, unformatCPF } from '@/lib/formatCpf';
+import { formatPhoneBR, unformatPhoneBR } from '@/lib/phone';
+import { normalizeAccessType } from '@/types/access.types';
+import { getRegisterContext } from '@/config/login-contexts';
+import { buildAuthUrl } from '@/lib/auth-url';
 
 // Zod validation schema
 const registerSchema = z.object({
@@ -65,10 +69,18 @@ const registerSchema = z.object({
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
-export default function RegisterPage() {
+/**
+ * Register form content component (uses useSearchParams)
+ */
+function RegisterFormContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { setAuth } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
+
+  // Get access type from URL and resolve context
+  const accessType = normalizeAccessType(searchParams.get('type'));
+  const context = getRegisterContext(accessType);
 
   const {
     register,
@@ -107,10 +119,11 @@ export default function RegisterPage() {
   });
 
   const onSubmit = (data: RegisterFormData) => {
-    // Strip CPF mask before sending to API
+    // Strip CPF mask before sending to API and include accessType
     const payload = {
       ...data,
       cpf: unformatCPF(data.cpf),
+      accessType,
     };
     registerMutation.mutate(payload);
   };
@@ -118,13 +131,13 @@ export default function RegisterPage() {
   return (
     <AuthLayout illustrationSide="right">
       <AuthCard
-        title="Criar conta"
-        description="Preencha os dados para começar a usar o sistema"
+        title={context.title}
+        description={context.subtitle}
         footer={
           <p>
             Já tem uma conta?{' '}
             <Link
-              href="/login"
+              href={buildAuthUrl('/login', accessType)}
               className="font-medium text-primary hover:text-primary/80 transition-colors"
             >
               Faça login
@@ -258,13 +271,24 @@ export default function RegisterPage() {
                 </Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="phone"
-                    placeholder="(00) 00000-0000"
-                    {...register('phone')}
-                    aria-invalid={!!errors.phone}
-                    aria-describedby={errors.phone ? 'phone-error' : undefined}
-                    className="pl-10"
+                  <Controller
+                    name="phone"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        id="phone"
+                        placeholder="(00) 00000-0000"
+                        value={field.value}
+                        onChange={(e) => {
+                          const formatted = formatPhoneBR(e.target.value);
+                          field.onChange(formatted);
+                        }}
+                        aria-invalid={!!errors.phone}
+                        aria-describedby={errors.phone ? 'phone-error' : undefined}
+                        className="pl-10"
+                        maxLength={15}
+                      />
+                    )}
                   />
                 </div>
                 {errors.phone && (
@@ -361,11 +385,22 @@ export default function RegisterPage() {
                 </Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="emergencyPhone"
-                    placeholder="(00) 00000-0000"
-                    {...register('emergencyPhone')}
-                    className="pl-10"
+                  <Controller
+                    name="emergencyPhone"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        id="emergencyPhone"
+                        placeholder="(00) 00000-0000"
+                        value={field.value || ''}
+                        onChange={(e) => {
+                          const formatted = formatPhoneBR(e.target.value);
+                          field.onChange(formatted);
+                        }}
+                        className="pl-10"
+                        maxLength={15}
+                      />
+                    )}
                   />
                 </div>
               </div>
@@ -415,5 +450,29 @@ export default function RegisterPage() {
         </m.form>
       </AuthCard>
     </AuthLayout>
+  );
+}
+
+/**
+ * Register page loading fallback
+ */
+function RegisterLoading() {
+  return (
+    <AuthLayout illustrationSide="right">
+      <div className="flex items-center justify-center p-8">
+        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    </AuthLayout>
+  );
+}
+
+/**
+ * Register page wrapper with Suspense for useSearchParams SSR compatibility
+ */
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<RegisterLoading />}>
+      <RegisterFormContent />
+    </Suspense>
   );
 }
