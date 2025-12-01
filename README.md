@@ -52,10 +52,10 @@
   <img src="resources/img/home-page.png" alt="Home Page" width="800"/>
 </div>
 
-### 🎬 Aplicação em Funcionamento (v1)
+### 🎬 Aplicação em Funcionamento
 
 <div align="center">
-  <img src="resources/img/sdd-demo.gif" alt="Demo da Aplicação" width="800"/>
+  <img src="resources/img/health-monitor-home-page.gif" alt="Demo da Aplicação" width="800"/>
 </div>
 
 ---
