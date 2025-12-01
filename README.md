@@ -89,7 +89,7 @@ Sistema completo de gerenciamento de saúde com assistente de IA, desenvolvido p
 
 ## 🔬 Metodologia de Desenvolvimento: SDD
 
-Este projeto está sendo desenvolvido usando **SDD (Spec-Driven Development)** com a ferramenta [**spec-kit**](https://github.com/spec-kit/spec-kit).
+Este projeto está sendo desenvolvido usando **SDD (Spec-Driven Development)** com a ferramenta [**spec-kit**](https://github.com/github/spec-kit).
 
 ### O que é SDD?
 
@@ -108,7 +108,7 @@ O **spec-kit** nos ajuda a:
 - ✅ Automatizar validações
 - ✅ Facilitar colaboração entre times
 
-> 💡 Para mais informações sobre SDD e spec-kit, consulte a [documentação oficial](https://github.com/spec-kit/spec-kit).
+> 💡 Para mais informações sobre SDD e spec-kit, consulte a [documentação oficial](https://github.com/github/spec-kit).
 
 ---
 
