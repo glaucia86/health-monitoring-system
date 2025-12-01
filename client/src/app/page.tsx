@@ -25,7 +25,7 @@ import {
   HeartPulse,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { m } from '@/lib/motion';
+import { m } from '@/lib/motion-provider';
 import {
   fadeInUp,
   staggerContainer,
