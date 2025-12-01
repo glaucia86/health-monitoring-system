@@ -49,7 +49,7 @@
 ### 📸 Home Page
 
 <div align="center">
-  <img src="resources/img/home-page.png" alt="Home Page" width="800"/>
+  <img src="resources/img/home-page-v1.png" alt="Home Page" width="800"/>
 </div>
 
 ### 🎬 Aplicação em Funcionamento
