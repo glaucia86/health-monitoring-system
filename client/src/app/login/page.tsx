@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,6 +18,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { staggerContainer, staggerItem } from '@/lib/motion';
 import { toast } from 'sonner';
+import { normalizeAccessType } from '@/types/access.types';
+import { getLoginContext } from '@/config/login-contexts';
 
 // Zod validation schema
 const loginSchema = z.object({
@@ -32,10 +34,18 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
-export default function LoginPage() {
+/**
+ * Login form content component (uses useSearchParams)
+ */
+function LoginFormContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { setAuth } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
+
+  // Get access type from URL and resolve context
+  const accessType = normalizeAccessType(searchParams.get('type'));
+  const context = getLoginContext(accessType);
 
   const {
     register,
@@ -72,8 +82,8 @@ export default function LoginPage() {
   return (
     <AuthLayout illustrationSide="left">
       <AuthCard
-        title="Bem-vindo de volta"
-        description="Entre com suas credenciais para acessar o sistema"
+        title={context.title}
+        description={context.subtitle}
         footer={
           <p>
             Não tem uma conta?{' '}
@@ -192,5 +202,29 @@ export default function LoginPage() {
         </m.form>
       </AuthCard>
     </AuthLayout>
+  );
+}
+
+/**
+ * Login page loading fallback
+ */
+function LoginLoading() {
+  return (
+    <AuthLayout illustrationSide="left">
+      <div className="flex items-center justify-center p-8">
+        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    </AuthLayout>
+  );
+}
+
+/**
+ * Login page wrapper with Suspense for useSearchParams SSR compatibility
+ */
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginLoading />}>
+      <LoginFormContent />
+    </Suspense>
   );
 }
