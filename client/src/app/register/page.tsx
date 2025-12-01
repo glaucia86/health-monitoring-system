@@ -57,14 +57,19 @@ const registerSchema = z.object({
   phone: z
     .string()
     .min(1, 'Telefone é obrigatório')
-    .min(10, 'Telefone deve ter pelo menos 10 dígitos'),
+    .refine((val) => unformatPhoneBR(val).length >= 10, 'Telefone deve ter pelo menos 10 dígitos')
+    .refine((val) => unformatPhoneBR(val).length <= 11, 'Telefone deve ter no máximo 11 dígitos'),
   password: z
     .string()
     .min(1, 'Senha é obrigatória')
     .min(6, 'Senha deve ter no mínimo 6 caracteres'),
   address: z.string().optional(),
   emergencyContact: z.string().optional(),
-  emergencyPhone: z.string().optional(),
+  emergencyPhone: z
+    .string()
+    .optional()
+    .refine((val) => !val || val.length === 0 || unformatPhoneBR(val).length >= 10, 'Telefone de emergência deve ter pelo menos 10 dígitos')
+    .refine((val) => !val || val.length === 0 || unformatPhoneBR(val).length <= 11, 'Telefone de emergência deve ter no máximo 11 dígitos'),
 });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
@@ -123,8 +128,8 @@ function RegisterFormContent() {
     const payload = {
       ...data,
       cpf: unformatCPF(data.cpf),
-      phone: data.phone ? unformatPhoneBR(data.phone) : data.phone,
-      emergencyPhone: data.emergencyPhone ? unformatPhoneBR(data.emergencyPhone) : data.emergencyPhone,
+      phone: unformatPhoneBR(data.phone),
+      emergencyPhone: unformatPhoneBR(data.emergencyPhone || ''),
       accessType,
     };
     registerMutation.mutate(payload);
