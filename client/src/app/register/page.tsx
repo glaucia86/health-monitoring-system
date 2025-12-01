@@ -119,10 +119,12 @@ function RegisterFormContent() {
   });
 
   const onSubmit = (data: RegisterFormData) => {
-    // Strip CPF mask before sending to API and include accessType
+    // Strip CPF and phone masks before sending to API and include accessType
     const payload = {
       ...data,
       cpf: unformatCPF(data.cpf),
+      phone: data.phone ? unformatPhoneBR(data.phone) : data.phone,
+      emergencyPhone: data.emergencyPhone ? unformatPhoneBR(data.emergencyPhone) : data.emergencyPhone,
       accessType,
     };
     registerMutation.mutate(payload);
