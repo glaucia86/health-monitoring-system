@@ -17,8 +17,8 @@ datasource db {
 
 enum Role {
   ADMIN
-  VIEWER
-  DOCTOR
+  CARETAKER
+  PATIENT
 }
 
 model User {
@@ -26,7 +26,7 @@ model User {
   email     String   @unique
   password  String
   name      String?
-  role      Role     @default(VIEWER)
+  role      Role     @default(CARETAKER)
   
   // Profile fields
   cpf              String?   @unique   // CPF (immutable after registration)

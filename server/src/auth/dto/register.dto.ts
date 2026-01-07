@@ -19,7 +19,7 @@ export class RegisterDto {
   @IsNotEmpty()
   name: string;
 
-  @ApiPropertyOptional({ enum: Role, default: Role.VIEWER })
+  @ApiPropertyOptional({ enum: Role, default: Role.CARETAKER })
   @IsEnum(Role)
   @IsOptional()
   role?: Role;

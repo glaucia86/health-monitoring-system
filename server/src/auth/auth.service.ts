@@ -12,7 +12,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private auditService: AuditService,
-  ) {}
+  ) { }
 
   async register(registerDto: RegisterDto) {
     // Check if user already exists
@@ -27,23 +27,19 @@ export class AuthService {
     // Hash password
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
 
-    // Create user with associated patient profile
+    // Create user with profile data
     const user = await this.prisma.user.create({
       data: {
         email: registerDto.email,
         password: hashedPassword,
         name: registerDto.name,
-        role: registerDto.role || 'VIEWER',
-        patients: {
-          create: {
-            name: registerDto.name,
-            birthDate: new Date(registerDto.birthdate),
-            diagnosis: null,
-          },
-        },
-      },
-      include: {
-        patients: true,
+        role: registerDto.role || 'CARETAKER',
+        cpf: registerDto.cpf,
+        birthDate: new Date(registerDto.birthdate),
+        phone: registerDto.phone,
+        address: registerDto.address,
+        emergencyContact: registerDto.emergencyContact,
+        emergencyPhone: registerDto.emergencyPhone,
       },
     });
 

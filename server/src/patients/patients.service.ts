@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class PatientsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   create(createPatientDto: CreatePatientDto) {
     return this.prisma.patient.create({
@@ -18,20 +18,22 @@ export class PatientsService {
     });
   }
 
-  findAll() {
-    return this.prisma.patient.findMany();
+  findAll(userId: string) {
+    return this.prisma.patient.findMany({
+      where: { userId },
+    });
   }
 
-  findOne(id: string) {
-    return this.prisma.patient.findUnique({
-      where: { id },
+  findOne(id: string, userId: string) {
+    return this.prisma.patient.findFirst({
+      where: { id, userId },
       include: { medications: true, exams: true, appointments: true },
     });
   }
 
-  update(id: string, updatePatientDto: UpdatePatientDto) {
-    return this.prisma.patient.update({
-      where: { id },
+  update(id: string, userId: string, updatePatientDto: UpdatePatientDto) {
+    return this.prisma.patient.updateMany({
+      where: { id, userId },
       data: {
         ...updatePatientDto,
         birthDate: updatePatientDto.birthDate ? new Date(updatePatientDto.birthDate) : undefined,
@@ -39,9 +41,9 @@ export class PatientsService {
     });
   }
 
-  remove(id: string) {
-    return this.prisma.patient.delete({
-      where: { id },
+  remove(id: string, userId: string) {
+    return this.prisma.patient.deleteMany({
+      where: { id, userId },
     });
   }
 }

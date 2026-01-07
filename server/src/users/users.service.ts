@@ -20,7 +20,7 @@ export class UsersService {
     private readonly auditService: AuditService,
     private readonly fileService: FileService,
     private readonly lockService: LockService,
-  ) {}
+  ) { }
 
   create(createUserDto: CreateUserDto) {
     return this.prisma.user.create({
@@ -61,6 +61,17 @@ export class UsersService {
   }
 
   async remove(id: string) {
+    const hasPatients = await this.prisma.patient.findFirst({
+      where: { userId: id },
+      select: { id: true },
+    });
+
+    if (hasPatients) {
+      throw new BadRequestException(
+        'Não é possível desativar este cuidador porque ele possui pacientes vinculados.',
+      );
+    }
+
     return this.prisma.user.update({
       where: { id },
       data: {
@@ -211,55 +222,55 @@ export class UsersService {
         select: { avatarUrl: true },
       });
 
-    // Upload new avatar file first – throws on I/O failure
-    const relativePath = this.fileService.uploadFile({
-      destinationDir: this.AVATAR_UPLOAD_DIR,
-      filename,
-      buffer: file.buffer,
-    });
-
-    const avatarUrl = `/${relativePath.replace(/\\/g, '/')}`;
-
-    try {
-      const updatedUser = await this.prisma.user.update({
-        where: { id: userId },
-        data: { avatarUrl },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          role: true,
-          cpf: true,
-          birthDate: true,
-          phone: true,
-          address: true,
-          emergencyContact: true,
-          emergencyPhone: true,
-          avatarUrl: true,
-          createdAt: true,
-        },
+      // Upload new avatar file first – throws on I/O failure
+      const relativePath = this.fileService.uploadFile({
+        destinationDir: this.AVATAR_UPLOAD_DIR,
+        filename,
+        buffer: file.buffer,
       });
 
-      // Remove old avatar file after successful DB update
-      if (currentUser?.avatarUrl) {
-        const oldFilePath = this.fileService.resolveFilePath(currentUser.avatarUrl);
-        if (oldFilePath) {
-          this.fileService.removeFile({ filePath: oldFilePath, suppressErrors: true });
+      const avatarUrl = `/${relativePath.replace(/\\/g, '/')}`;
+
+      try {
+        const updatedUser = await this.prisma.user.update({
+          where: { id: userId },
+          data: { avatarUrl },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            role: true,
+            cpf: true,
+            birthDate: true,
+            phone: true,
+            address: true,
+            emergencyContact: true,
+            emergencyPhone: true,
+            avatarUrl: true,
+            createdAt: true,
+          },
+        });
+
+        // Remove old avatar file after successful DB update
+        if (currentUser?.avatarUrl) {
+          const oldFilePath = this.fileService.resolveFilePath(currentUser.avatarUrl);
+          if (oldFilePath) {
+            this.fileService.removeFile({ filePath: oldFilePath, suppressErrors: true });
+          }
         }
-      }
 
-      // Audit log
-      this.auditService.logAvatarUpdate(userId, 'upload', filename);
+        // Audit log
+        this.auditService.logAvatarUpdate(userId, 'upload', filename);
 
-      return UserProfileMapper.toProfileResponseFromPartial(updatedUser);
-    } catch (error) {
-      // DB update failed – best-effort cleanup of newly uploaded file
-      const newFilePath = this.fileService.resolveFilePath(avatarUrl);
-      if (newFilePath) {
-        this.fileService.removeFile({ filePath: newFilePath, suppressErrors: true });
+        return UserProfileMapper.toProfileResponseFromPartial(updatedUser);
+      } catch (error) {
+        // DB update failed – best-effort cleanup of newly uploaded file
+        const newFilePath = this.fileService.resolveFilePath(avatarUrl);
+        if (newFilePath) {
+          this.fileService.removeFile({ filePath: newFilePath, suppressErrors: true });
+        }
+        throw error;
       }
-      throw error;
-    }
     }); // End of lock
   }
 
