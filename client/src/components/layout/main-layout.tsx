@@ -2,25 +2,26 @@
 
 import { ReactNode, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  Calendar, 
-  Pill, 
-  MessageCircle, 
-  FileText, 
+import {
+  LayoutDashboard,
+  Calendar,
+  Pill,
+  MessageCircle,
+  FileText,
   FlaskConical,
   ClipboardList,
-  Bell as BellIcon
+  Bell as BellIcon,
+  User
 } from 'lucide-react';
 import { m, AnimatePresence } from '@/lib/motion-provider';
 import { cn } from '@/lib/utils';
 import { useUIStore, initializeTheme } from '@/stores/ui.store';
-import { 
-  Sidebar, 
-  SidebarHeader, 
-  SidebarNav, 
-  SidebarSection, 
-  SidebarFooter 
+import {
+  Sidebar,
+  SidebarHeader,
+  SidebarNav,
+  SidebarSection,
+  SidebarFooter
 } from './sidebar';
 import { SidebarNavItem } from './sidebar-nav-item';
 import { Header, HeaderActions } from './header';
@@ -39,49 +40,54 @@ interface MainLayoutProps {
 
 // Navigation configuration
 const mainNavItems = [
-  { 
-    icon: LayoutDashboard, 
-    label: 'Dashboard', 
-    href: '/dashboard' 
+  {
+    icon: LayoutDashboard,
+    label: 'Dashboard',
+    href: '/dashboard'
   },
-  { 
-    icon: Calendar, 
-    label: 'Consultas', 
+  {
+    icon: Calendar,
+    label: 'Consultas',
     href: '/appointments',
-    badge: 2 
+    badge: 2
   },
-  { 
-    icon: Pill, 
-    label: 'Medicamentos', 
-    href: '/medications' 
+  {
+    icon: Pill,
+    label: 'Medicamentos',
+    href: '/medications'
   },
-  { 
-    icon: FlaskConical, 
-    label: 'Exames', 
-    href: '/exams' 
+  {
+    icon: FlaskConical,
+    label: 'Exames',
+    href: '/exams'
   },
-  { 
-    icon: ClipboardList, 
-    label: 'Prontuário', 
-    href: '/intakes' 
+  {
+    icon: ClipboardList,
+    label: 'Prontuário',
+    href: '/intakes'
   },
-  { 
-    icon: FileText, 
-    label: 'Documentos', 
-    href: '/documents' 
+  {
+    icon: FileText,
+    label: 'Documentos',
+    href: '/documents'
   },
+  {
+    icon: User,
+    label: 'Pacientes',
+    href: '/patients'
+  }
 ];
 
 const supportNavItems = [
-  { 
-    icon: MessageCircle, 
-    label: 'Chat com IA', 
-    href: '/chat' 
+  {
+    icon: MessageCircle,
+    label: 'Chat com IA',
+    href: '/chat'
   },
-  { 
-    icon: BellIcon, 
-    label: 'Lembretes', 
-    href: '/notifications' 
+  {
+    icon: BellIcon,
+    label: 'Lembretes',
+    href: '/notifications'
   },
 ];
 
@@ -92,11 +98,11 @@ export function MainLayout({
   showNotifications = true,
 }: MainLayoutProps) {
   const pathname = usePathname();
-  const { 
-    sidebarCollapsed, 
-    setSidebarCollapsed, 
-    sidebarMobileOpen, 
-    setSidebarMobileOpen 
+  const {
+    sidebarCollapsed,
+    setSidebarCollapsed,
+    sidebarMobileOpen,
+    setSidebarMobileOpen
   } = useUIStore();
 
   // Initialize theme on mount
